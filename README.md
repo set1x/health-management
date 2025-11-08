@@ -2,29 +2,7 @@
 
 一个现代化的健康管理平台，帮助用户追踪身体数据、管理饮食运动，并提供 AI 健康咨询服务。
 
-## 项目简介
-
-本项目旨在为用户提供一个全方位的健康管理解决方案，通过数据可视化、智能分析等功能，帮助用户更好地了解和改善自己的健康状况。
-
-### 技术栈
-
-**前端**:
-
-- Vue 3 + TypeScript
-- Nuxt 4
-- NuxtUI
-- Tailwind CSS
-
-**后端**:
-
-- Java 17
-- Spring Boot 3.4
-- MySQL 9
-- Redis
-
----
-
-## 核心功能
+## 功能特性
 
 ### 数据概览仪表板
 
@@ -69,39 +47,27 @@
 - 健康目标设置
 - 数据统计展示
 
----
+## 技术栈
+
+**前端**: Vue 3 + Nuxt 4 + TypeScript + NuxtUI  
+**后端**: Java 17 + Spring Boot 3.4 + MySQL + Redis
+
+详细技术栈与开发指南请查看：
+
+- [前端项目](./frontend/README.md)
+- [后端项目](./backend/README.md)
 
 ## 项目结构
 
 ```
 health-management/
-├── frontend/          # 前端项目
-├── backend/           # 后端项目
-├── docs/              # 项目文档
-├── .gitignore
-└── README.md
+├── frontend/          # 前端项目 (Vue 3 + Nuxt 4)
+├── backend/           # 后端项目 (Spring Boot)
+└── docs/              # 项目文档
 ```
-
-详细构建说明请查看各子项目的 README：
-
-- [前端项目说明](./frontend/README.md)
-- [后端项目说明](./backend/README.md)
-
----
 
 ## 文档
 
-- [贡献指南](./CONTRIBUTING.md) - 如何参与项目开发
-- [项目路线图](./docs/roadmap.md) - 开发计划和进度
-- [Git 提交规范](./docs/git-commit-guide.md) - 提交信息格式规范
-
----
-
-## 如何贡献
-
-我们欢迎所有形式的贡献！在开始之前，请阅读 [贡献指南](./CONTRIBUTING.md) 了解：
-
-- 开发环境搭建
-- 分支管理策略
-- 代码规范要求
-- Pull Request 流程
+- [贡献指南](./CONTRIBUTING.md) - 参与开发的说明
+- [项目路线图](./docs/roadmap.md) - 开发计划与进度
+- [提交规范](./docs/git-commit-guide.md) - Git 提交格式
