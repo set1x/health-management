@@ -38,20 +38,20 @@ const healthStats = reactive({
     exercise: 0,
     body: 0
   },
-  activeDays: 0
+  registrationDays: 0
 })
 
 // 健康目标
 const goals = reactive({
-  targetWeight: 70.0,
-  dailyCaloriesIntake: 2000,
-  dailyCaloriesBurn: 500
+  targetWeight: null as number | null,
+  dailyCaloriesIntake: null as number | null,
+  dailyCaloriesBurn: null as number | null
 })
 
 // 当前数据
-const currentWeight = ref(70.5)
-const todayCalories = ref(1850)
-const todayCaloriesBurned = ref(420)
+const currentWeight = ref<number | null>(null)
+const todayCalories = ref(0)
+const todayCaloriesBurned = ref(0)
 
 // 对话框状态
 const showEditDialog = ref(false)
@@ -157,6 +157,7 @@ const loadUserData = async () => {
         nickname: string
         gender: string
         dateOfBirth: string
+        registrationDate?: string
       }
     }>('/api/user/profile', {
       headers: tokenCookie.value
@@ -168,11 +169,85 @@ const loadUserData = async () => {
 
     if (response.code === 1 && response.data) {
       Object.assign(userInfo, response.data)
+
+      // 计算注册天数
+      if (response.data.registrationDate) {
+        const registrationDate = new Date(response.data.registrationDate)
+        const today = new Date()
+        const diffTime = Math.abs(today.getTime() - registrationDate.getTime())
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        healthStats.registrationDays = diffDays
+      }
+
+      // 加载健康统计数据
+      await loadHealthStats()
     }
   } catch {
     toast.add({ title: '加载数据失败', color: 'error' })
   } finally {
     loading.value = false
+  }
+}
+
+// 加载健康统计数据
+const loadHealthStats = async () => {
+  if (!userInfo.userID || !tokenCookie.value) return
+
+  try {
+    const headers = {
+      Authorization: `Bearer ${tokenCookie.value}`
+    }
+
+    // 并行查询三个接口获取记录总数
+    const [dietResponse, exerciseResponse, bodyResponse] = await Promise.all([
+      // 查询饮食记录总数
+      $fetch<{ code: number; data: { rows: unknown[]; total: number } }>('/api/diet-items', {
+        method: 'GET',
+        headers,
+        params: {
+          userID: userInfo.userID,
+          page: 1,
+          pageSize: 1
+        }
+      }).catch(() => ({ code: 0, data: { rows: [], total: 0 } })),
+
+      // 查询运动记录总数
+      $fetch<{ code: number; data: { rows: unknown[]; total: number } }>('/api/exercise-items', {
+        method: 'GET',
+        headers,
+        params: {
+          userID: userInfo.userID,
+          page: 1,
+          pageSize: 1
+        }
+      }).catch(() => ({ code: 0, data: { rows: [], total: 0 } })),
+
+      // 查询体重记录总数
+      $fetch<{ code: number; data: { rows: unknown[]; total: number } }>('/api/body-metrics', {
+        method: 'GET',
+        headers,
+        params: {
+          userID: userInfo.userID,
+          page: 1,
+          pageSize: 1
+        }
+      }).catch(() => ({ code: 0, data: { rows: [], total: 0 } }))
+    ])
+
+    // 更新统计数据
+    if (dietResponse.code === 1 && dietResponse.data) {
+      healthStats.totalRecords.diet = dietResponse.data.total || 0
+    }
+
+    if (exerciseResponse.code === 1 && exerciseResponse.data) {
+      healthStats.totalRecords.exercise = exerciseResponse.data.total || 0
+    }
+
+    if (bodyResponse.code === 1 && bodyResponse.data) {
+      healthStats.totalRecords.body = bodyResponse.data.total || 0
+    }
+  } catch (error) {
+    console.error('加载健康统计失败:', error)
   }
 }
 
@@ -537,8 +612,8 @@ onMounted(() => {
                 <div class="text-xs">体重记录</div>
               </div>
               <div class="rounded-lg p-4">
-                <div class="text-2xl font-bold">{{ healthStats.activeDays }}</div>
-                <div class="text-xs">活跃天数</div>
+                <div class="text-2xl font-bold">{{ healthStats.registrationDays }}</div>
+                <div class="text-xs">注册天数</div>
               </div>
               <div class="rounded-lg p-4">
                 <div class="text-2xl font-bold">
