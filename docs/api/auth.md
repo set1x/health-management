@@ -17,6 +17,7 @@
   ```
 
   字段 `nickname` 可用 `username` 替代；`gender`、`dateOfBirth` 可选
+  后端会自动补充 `registrationDate` 字段，无需手动提交
 
 - **成功响应**：
 

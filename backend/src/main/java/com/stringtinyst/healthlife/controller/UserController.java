@@ -30,6 +30,7 @@ public class UserController {
         user.setUserID(UUID.randomUUID().toString());
         user.setEmail(body.get("email").asText());
         user.setPasswordHash(body.get("password").asText());
+        user.setRegistrationDate(LocalDate.now());
 
         if (body.has("nickname")) {
             user.setNickname(body.get("nickname").asText());

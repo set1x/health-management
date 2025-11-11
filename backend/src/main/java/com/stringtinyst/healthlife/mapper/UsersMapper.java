@@ -6,7 +6,7 @@ import org.apache.ibatis.annotations.*;
 @Mapper
 public interface UsersMapper {
 
-    @Insert("INSERT INTO users (UserID, Email, PasswordHash,Nickname,Gender,DateOfBirth) VALUES (#{userID}, #{email}, #{passwordHash},#{nickname},#{gender},#{dateOfBirth})")
+    @Insert("INSERT INTO users (UserID, Email, PasswordHash, Nickname, Gender, DateOfBirth, RegistrationDate) VALUES (#{userID}, #{email}, #{passwordHash}, #{nickname}, #{gender}, #{dateOfBirth}, #{registrationDate})")
     int insertUser(User user);
 
     @Select("SELECT COUNT(*) FROM users WHERE Email = #{email}")

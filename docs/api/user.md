@@ -17,12 +17,14 @@
       "passwordHash": "hash==$salt",
       "nickname": "yournickname",
       "gender": "Male",
-      "dateOfBirth": "YYYY-MM-DD"
+      "dateOfBirth": "YYYY-MM-DD",
+      "registrationDate": "YYYY-MM-DD"
     }
   }
   ```
 
   > 当前实现会返回 `passwordHash` 字段，如需隐藏需在后端过滤
+  > 字段 `registrationDate` 为后端自动生成的注册日期，只读不可修改
 
 - **鉴权失败**：`{"code":0,"msg":"未登录或登录已过期，请重新登录"}`
 
@@ -38,6 +40,8 @@
   }
   ```
 
+  字段 `registrationDate` 由后端维护，无需也不应在请求体中传入
+
 - **成功响应**：返回更新后的用户对象，示例
 
   ```json
@@ -50,7 +54,8 @@
       "passwordHash": null,
       "nickname": "tester-updated",
       "gender": null,
-      "dateOfBirth": null
+      "dateOfBirth": null,
+      "registrationDate": "2025-06-24"
     }
   }
   ```

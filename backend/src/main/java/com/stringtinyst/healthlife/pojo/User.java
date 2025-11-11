@@ -19,4 +19,5 @@ public class User {
     private String nickname;
     private String gender;
     private LocalDate dateOfBirth;
+    private LocalDate registrationDate;
 }
