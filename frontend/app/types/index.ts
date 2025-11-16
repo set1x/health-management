@@ -82,6 +82,24 @@ export interface ExerciseRequest {
   recordDate?: string // 记录日期，可选（默认今日）
 }
 
+// 睡眠相关类型
+export interface SleepRecord {
+  sleepItemID?: number // API 返回的 ID 字段
+  userID: string
+  recordDate: string // 记录日期 YYYY-MM-DD
+  bedTime?: string | null // 入睡时间，ISO 字符串
+  wakeTime?: string | null // 起床时间，ISO 字符串
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface SleepRequest {
+  userID: string
+  recordDate?: string // 记录日期，可选，默认今日
+  bedTime?: string | null
+  wakeTime?: string | null
+}
+
 // API 响应类型
 export interface ApiResponse<T> {
   success: boolean

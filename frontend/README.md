@@ -48,7 +48,8 @@ health-management/
 │   │   ├── YearMonthSelect.vue       # 年月选择器
 │   │   ├── QuickBodyDataDialog.vue   # 快速记录体重
 │   │   ├── QuickDietDialog.vue       # 快速记录饮食
-│   │   └── QuickExerciseDialog.vue   # 快速记录运动
+│   │   ├── QuickExerciseDialog.vue   # 快速记录运动
+│   │   └── QuickSleepDialog.vue      # 快速记录睡眠
 │   ├── composables/
 │   │   ├── useAuth.ts                # 认证状态管理
 │   │   └── useECharts.ts             # ECharts 配置
@@ -64,6 +65,7 @@ health-management/
 │   │   ├── body-data.vue             # 身体数据（CSR）
 │   │   ├── diet.vue                  # 饮食管理（CSR）
 │   │   ├── exercise.vue              # 运动管理（CSR）
+│   │   ├── sleep.vue                 # 睡眠管理（CSR）
 │   │   ├── chat.vue                  # AI 咨询（CSR）
 │   │   └── profile.vue               # 个人中心（CSR）
 │   ├── plugins/
