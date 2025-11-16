@@ -170,6 +170,12 @@ const menuItems = computed<NavigationMenuItem[]>(() => [
     active: route.path === '/exercise'
   },
   {
+    label: '睡眠管理',
+    icon: 'mdi:sleep',
+    to: '/sleep',
+    active: route.path === '/sleep'
+  },
+  {
     label: '健康咨询',
     icon: 'heroicons:chat-bubble-left-right',
     to: '/chat',
