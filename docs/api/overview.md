@@ -37,4 +37,11 @@
 - [body-metrics.md](./body-metrics.md)：身体数据接口
 - [diet-items.md](./diet-items.md)：饮食记录接口
 - [exercise-items.md](./exercise-items.md)：运动记录接口
+- [sleep-items.md](./sleep-items.md)：睡眠记录接口
 - [chat.md](./chat.md)：AI 聊天接口
+
+## 服务端数据校验
+
+- 体征、饮食、运动、睡眠等记录接口会在 Controller 层对关键字段做范围与顺序校验
+- 当校验失败时接口仍返回 `200`，但 `code = 0` 且 `msg` 包含具体原因
+- 前端继续保留表单校验，后端校验作为兜底

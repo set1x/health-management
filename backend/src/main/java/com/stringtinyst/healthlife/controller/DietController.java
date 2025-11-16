@@ -4,6 +4,7 @@ import com.stringtinyst.healthlife.pojo.Diet;
 import com.stringtinyst.healthlife.pojo.PageBean;
 import com.stringtinyst.healthlife.pojo.Result;
 import com.stringtinyst.healthlife.service.DietService;
+import jakarta.validation.Valid;
 import java.time.LocalDate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,16 +37,15 @@ public class DietController {
   }
 
   @PostMapping
-  public Result addDiet(@RequestBody Diet diet) {
+  public Result addDiet(@Valid @RequestBody Diet diet) {
     log.info("Adding new diet item for user: {}", diet.getUserID());
     dietService.addDiet(diet);
-    int dietItemID = dietService.searchdietItemID(diet);
-    return Result.success(dietItemID);
+    return Result.success(diet.getDietItemID());
   }
 
   /** Update a diet item */
   @PutMapping("/{dietItemID}")
-  public Result updateDiet(@PathVariable int dietItemID, @RequestBody Diet diet) {
+  public Result updateDiet(@PathVariable int dietItemID, @Valid @RequestBody Diet diet) {
     log.info("Updating diet item with ID: {}", dietItemID);
     diet.setDietItemID(dietItemID);
     dietService.updateDiet(diet);

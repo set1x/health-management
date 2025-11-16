@@ -25,7 +25,7 @@
                 │InMemory 会话上下文    │
 ┌───────────────┴───────────────────────▼───────────────────┐
 │                          MySQL                            │
-│  - 用户、身体/饮食/运动数据持久化                         │
+│  - 用户、身体/饮食/运动/睡眠数据持久化                    │
 │  - 统一结构化数据源                                       │
 └───────────────────────────────────────────────────────────┘
                 │
@@ -46,7 +46,7 @@
   - Spring Boot 微服务，遵循 Controller-Service-Mapper 分层
   - 使用 MyBatis + PageHelper 访问 MySQL，统一封装 `Result` 响应结构，拦截器完成 JWT 鉴权
 - **数据层**：
-  - MySQL 存储结构化健康指标数据和用户资料
+  - MySQL 存储结构化健康指标数据和用户资料（覆盖身体/饮食/运动/睡眠）
   - 聊天上下文通过 `UserChatSessionManager` 搭配 `InMemoryChatMemory` 保存在内存中
 - **AI 能力**：
   - 借助 Spring AI Alibaba 模块调用通义千问大模型，支持 SSE 流式对话
@@ -65,7 +65,7 @@
 
 ### 健康数据采集流程
 
-1. 前端通过 `POST /body-metrics` 等接口提交体重、饮食、运动信息
+1. 前端通过 `POST /body-metrics`、`/diet-items`、`/exercise-items`、`/sleep-items` 等接口提交身体、饮食、运动、睡眠信息
 2. 后端 Service 层完成参数校验与业务规则，并调用 Mapper 持久化
 3. 查询时通过分页接口 `GET /body-metrics` 返回 `PageBean` 结构
 4. 前端使用 ECharts 渲染结果，并支持快速录入对话框组件

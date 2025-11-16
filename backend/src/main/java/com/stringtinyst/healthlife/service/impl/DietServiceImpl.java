@@ -22,11 +22,6 @@ public class DietServiceImpl implements DietService {
   }
 
   @Override
-  public int searchdietItemID(Diet diet) {
-    return dietMapper.searchdietItemID(diet);
-  }
-
-  @Override
   public PageBean page(
       Integer page,
       Integer pageSize,

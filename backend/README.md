@@ -46,22 +46,26 @@ backend/
 │   │   │   │   ├── ChatController.java
 │   │   │   │   ├── DietController.java
 │   │   │   │   ├── ExerController.java
+│   │   │   │   ├── SleepController.java
 │   │   │   │   ├── UploadController.java
 │   │   │   │   ├── UserController.java
 │   │   │   │   └── UserProfileController.java
 │   │   │   ├── service/                      # 服务层
 │   │   │   │   ├── BodyService.java
 │   │   │   │   ├── DietService.java
-│   │   │   │   └── ...
+│   │   │   │   ├── ExerService.java
+│   │   │   │   └── SleepService.java
 │   │   │   ├── mapper/                       # MyBatis 映射器
 │   │   │   │   ├── BodyMapper.java
 │   │   │   │   ├── DietMapper.java
 │   │   │   │   ├── ExerMapper.java
+│   │   │   │   ├── SleepMapper.java
 │   │   │   │   └── UsersMapper.java
 │   │   │   ├── pojo/                         # 实体类
 │   │   │   │   ├── Body.java
 │   │   │   │   ├── Diet.java
 │   │   │   │   ├── Exer.java
+│   │   │   │   ├── Sleep.java
 │   │   │   │   ├── User.java
 │   │   │   │   ├── Result.java              # 统一响应格式
 │   │   │   │   └── PageBean.java            # 分页对象
@@ -105,6 +109,13 @@ backend/
 ### 环境变量配置
 
 参照 `.env.example` 配置 `.env` 文件
+
+在本地直接运行 `./gradlew bootRun`、`./gradlew test` 等命令前，先导入 `.env` 中的键值，让 Spring 进程可以拿到相关配置：
+
+```bash
+cd backend
+export $(grep -v '^#' .env | xargs)
+```
 
 ### 数据库初始化
 
@@ -282,5 +293,6 @@ Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - **身体数据**：`GET /body`, `POST /body`, `PUT /body`, `DELETE /body`
 - **饮食管理**：`GET /diet`, `POST /diet`, `PUT /diet`, `DELETE /diet`
 - **运动管理**：`GET /exer`, `POST /exer`, `PUT /exer`, `DELETE /exer`
+- **睡眠管理**：`GET /sleep-items`, `POST /sleep-items`, `PUT /sleep-items/{id}`, `DELETE /sleep-items/{id}`
 - **AI 咨询**：`GET /chat` (SSE 流式响应)
 - **文件上传**：`POST /upload`

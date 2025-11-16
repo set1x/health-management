@@ -60,3 +60,7 @@
 ## `DELETE /exercise-items/{exerciseItemID}`
 
 - **成功响应**：`{"code":1,"msg":"success","data":null}`；删除后再查该 ID 返回 `data = null`
+
+## 数据校验
+
+- `durationMinutes` 范围 `1-600`

@@ -3,6 +3,7 @@
 DROP TABLE IF EXISTS `bodymetrics`;
 DROP TABLE IF EXISTS `dietitem`;
 DROP TABLE IF EXISTS `exerciseitem`;
+DROP TABLE IF EXISTS `sleepitem`;
 DROP TABLE IF EXISTS `users`;
 
 CREATE TABLE `users` (
@@ -51,6 +52,17 @@ CREATE TABLE `exerciseitem` (
   PRIMARY KEY (`ExerciseItemID`),
   KEY `IDX_ExerciseItem_User_Date` (`UserID`, `RecordDate`),
   CONSTRAINT `FK_ExerciseItem_User` FOREIGN KEY (`UserID`) REFERENCES `users` (`UserID`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `sleepitem` (
+  `SleepItemID` int NOT NULL AUTO_INCREMENT,
+  `UserID` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `RecordDate` date NOT NULL,
+  `BedTime` datetime DEFAULT NULL,
+  `WakeTime` datetime DEFAULT NULL,
+  PRIMARY KEY (`SleepItemID`),
+  KEY `IDX_SleepItem_User_Date` (`UserID`, `RecordDate`),
+  CONSTRAINT `FK_SleepItem_User` FOREIGN KEY (`UserID`) REFERENCES `users` (`UserID`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- End of schema definition

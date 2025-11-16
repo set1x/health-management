@@ -1,19 +1,20 @@
 package com.stringtinyst.healthlife.pojo;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** Diet item entity */
+/** Sleep record entity */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Diet {
-  private int dietItemID;
+public class Sleep {
+  private int sleepItemID;
 
   @NotBlank(message = "userID 不能为空")
   private String userID;
@@ -21,13 +22,14 @@ public class Diet {
   @NotNull(message = "recordDate 不能为空")
   private LocalDate recordDate;
 
-  @NotBlank(message = "foodName 不能为空")
-  private String foodName;
+  private LocalDateTime bedTime;
+  private LocalDateTime wakeTime;
 
-  @NotBlank(message = "mealType 不能为空")
-  private String mealType;
-
-  @NotNull(message = "estimatedCalories 不能为空")
-  @Positive(message = "estimatedCalories 必须大于 0")
-  private Integer estimatedCalories;
+  @AssertTrue(message = "bedTime 不能晚于 wakeTime")
+  public boolean isBedTimeBeforeWakeTime() {
+    if (bedTime == null || wakeTime == null) {
+      return true;
+    }
+    return !bedTime.isAfter(wakeTime);
+  }
 }

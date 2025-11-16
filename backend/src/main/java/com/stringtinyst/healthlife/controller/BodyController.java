@@ -4,6 +4,7 @@ import com.stringtinyst.healthlife.pojo.Body;
 import com.stringtinyst.healthlife.pojo.PageBean;
 import com.stringtinyst.healthlife.pojo.Result;
 import com.stringtinyst.healthlife.service.BodyService;
+import jakarta.validation.Valid;
 import java.time.LocalDate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,14 +36,14 @@ public class BodyController {
   }
 
   @PostMapping
-  public Result addBody(@RequestBody Body body) {
+  public Result addBody(@Valid @RequestBody Body body) {
     bodyService.addBody(body);
     int bodyMetricID = bodyService.searchbodyID(body);
     return Result.success(bodyMetricID);
   }
 
   @PutMapping("/{bodyMetricID}")
-  public Result updateBody(@PathVariable int bodyMetricID, @RequestBody Body body) {
+  public Result updateBody(@PathVariable int bodyMetricID, @Valid @RequestBody Body body) {
     body.setBodyMetricID(bodyMetricID);
     bodyService.updateBody(body);
     return Result.success();
