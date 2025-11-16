@@ -63,3 +63,8 @@
 ## `DELETE /body-metrics/{bodyMetricID}`
 
 删除身体数据，成功响应 `{"code":1,"msg":"success","data":null}`，删除后再查同 ID 会得到 `data = null`
+
+## 数据校验
+
+- `heightCM` 范围 `100-250`
+- `weightKG` 范围 `30-300`

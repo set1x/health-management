@@ -4,6 +4,7 @@ import com.stringtinyst.healthlife.pojo.Exer;
 import com.stringtinyst.healthlife.pojo.PageBean;
 import com.stringtinyst.healthlife.pojo.Result;
 import com.stringtinyst.healthlife.service.ExerService;
+import jakarta.validation.Valid;
 import java.time.LocalDate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,14 +36,14 @@ public class ExerController {
   }
 
   @PostMapping
-  public Result addExer(@RequestBody Exer exer) {
+  public Result addExer(@Valid @RequestBody Exer exer) {
     exerService.addExer(exer);
     int exerItemID = exerService.searchExerItemID(exer);
     return Result.success(exerItemID);
   }
 
   @PutMapping("/{exerciseItemID}")
-  public Result updateExer(@PathVariable int exerciseItemID, @RequestBody Exer exer) {
+  public Result updateExer(@PathVariable int exerciseItemID, @Valid @RequestBody Exer exer) {
     exer.setExerciseItemID(exerciseItemID);
     exerService.updateExer(exer);
     return Result.success();
