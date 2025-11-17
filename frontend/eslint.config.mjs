@@ -6,7 +6,6 @@ export default withNuxt([
   eslintPluginPrettierRecommended,
   {
     rules: {
-      'prettier/prettier': ['warn', { endOfLine: 'auto' }],
       'no-console': ['warn', { allow: ['warn', 'error'] }]
     }
   }

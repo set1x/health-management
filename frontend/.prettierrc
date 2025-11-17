@@ -5,8 +5,6 @@
   "tabWidth": 2,
   "trailingComma": "none",
   "printWidth": 100,
-  "endOfLine": "auto",
-  "editorconfig": false,
   "plugins": ["prettier-plugin-tailwindcss"],
   "tailwindStylesheet": "./app/assets/css/main.css"
 }
