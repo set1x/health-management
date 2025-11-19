@@ -23,13 +23,8 @@ export const useAuth = () => {
   // 计算属性
   const isLoggedIn = computed(() => !!token.value)
 
-  // 获取 toast 实例的辅助函数（仅客户端）
-  const getToast = () => {
-    if (import.meta.client) {
-      return useToast()
-    }
-    return { add: () => {} }
-  }
+  // 获取 toast 实例
+  const toast = import.meta.client ? useToast() : { add: () => {} }
 
   // 解析 JWT token 获取 payload（仅客户端）
   const parseJwt = (tokenStr: string) => {
@@ -76,7 +71,7 @@ export const useAuth = () => {
           }
         }
 
-        getToast().add({
+        toast.add({
           title: '登录成功',
           color: 'success'
         })
@@ -91,7 +86,7 @@ export const useAuth = () => {
       }
     } catch (error: unknown) {
       const apiError = error as ApiError
-      getToast().add({
+      toast.add({
         title: '登录失败',
         description: apiError.message || apiError.response?.data?.message || '请稍后重试',
         color: 'error'
@@ -110,7 +105,7 @@ export const useAuth = () => {
 
       // 适配后端返回格式：code: 1 表示成功，code: 0 表示失败
       if (response.code === 1) {
-        getToast().add({
+        toast.add({
           title: '注册成功',
           description: '请登录',
           color: 'success'
@@ -122,7 +117,7 @@ export const useAuth = () => {
     } catch (error: unknown) {
       const apiError = error as ApiError
 
-      getToast().add({
+      toast.add({
         title: '注册失败',
         description: apiError.message || apiError.response?.data?.message || '请稍后重试',
         color: 'error'
@@ -159,7 +154,7 @@ export const useAuth = () => {
       if (apiError.response?.status === 401) {
         logout(silent)
         if (!silent) {
-          getToast().add({
+          toast.add({
             title: '登录已过期',
             description: '请重新登录',
             color: 'warning'
@@ -250,7 +245,7 @@ export const useAuth = () => {
       })
 
       if (response.code === 1) {
-        getToast().add({
+        toast.add({
           title: '更新成功',
           color: 'success'
         })
@@ -260,7 +255,7 @@ export const useAuth = () => {
       }
     } catch (error: unknown) {
       const apiError = error as ApiError
-      getToast().add({
+      toast.add({
         title: '更新失败',
         description: apiError.message || apiError.response?.data?.message || '请稍后重试',
         color: 'error'
@@ -290,7 +285,7 @@ export const useAuth = () => {
     sharedAvatarUrl.value = ''
 
     if (!silent) {
-      getToast().add({
+      toast.add({
         title: '已退出登录',
         color: 'neutral'
       })

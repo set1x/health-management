@@ -296,20 +296,23 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
         </div>
 
         <UFormField label="运动类型" name="exerciseType">
-          <UInputMenu
+          <USelectMenu
             v-model="state.exerciseType"
             :items="exerciseTypeOptions"
             value-key="value"
             placeholder="选择运动类型"
-            auto-open
+            :search-input="{
+              placeholder: '输入运动类型',
+              icon: 'mdi:magnify'
+            }"
           >
             <template #leading="{ modelValue }">
               <UIcon
-                v-if="modelValue"
                 :name="
-                  exerciseTypeOptions.find((o) => o.value === modelValue)?.icon ||
-                  'mdi:lightning-bolt'
+                  (modelValue && exerciseTypeOptions.find((o) => o.value === modelValue)?.icon) ||
+                  'mdi:human'
                 "
+                :class="!modelValue ? 'text-gray-400' : ''"
               />
             </template>
             <template #item="{ item }">
@@ -318,7 +321,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
                 <span>{{ item.label }}</span>
               </div>
             </template>
-          </UInputMenu>
+          </USelectMenu>
         </UFormField>
 
         <UFormField label="运动强度" name="intensity">

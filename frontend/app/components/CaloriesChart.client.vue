@@ -44,6 +44,12 @@ const averageNet = computed(() => {
 const init = () => {
   if (!chartRef.value) return
 
+  // 检查容器是否有宽度和高度，若没有则延迟初始化
+  if (chartRef.value.clientWidth === 0 || chartRef.value.clientHeight === 0) {
+    setTimeout(init, 100)
+    return
+  }
+
   disposeChart(chart)
   chart = initChart(chartRef.value)
   updateChart()

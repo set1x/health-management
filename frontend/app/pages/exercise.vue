@@ -472,20 +472,26 @@ onMounted(() => {
             <label for="exercise-filter-type" class="mb-2 block text-sm font-medium"
               >运动类型</label
             >
-            <UInputMenu
+            <USelectMenu
               id="exercise-filter-type"
               v-model="filterExerciseType"
               :items="exerciseTypeOptions"
               value-key="value"
               placeholder="全部"
-              block
-              auto-open
+              :search-input="{
+                placeholder: '输入运动类型',
+                icon: 'mdi:magnify'
+              }"
+              class="w-full"
               @change="loadData"
             >
-              <template #leading="{ modelValue }">
-                <UIcon v-if="modelValue" :name="getExerciseTypeIcon(modelValue)" />
+              <template #leading>
+                <UIcon
+                  :name="filterExerciseType ? getExerciseTypeIcon(filterExerciseType) : 'mdi:human'"
+                  class="h-5 w-5 text-gray-400"
+                />
               </template>
-            </UInputMenu>
+            </USelectMenu>
           </div>
 
           <!-- 重置按钮 -->

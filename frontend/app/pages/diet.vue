@@ -40,11 +40,11 @@ const endDateCalendar = shallowRef<DateValue | null>(null)
 
 // 用餐类型选项
 const mealTypeOptions = [
-  { label: '全部', value: 'all' },
-  { label: '早餐', value: '早餐' },
-  { label: '午餐', value: '午餐' },
-  { label: '晚餐', value: '晚餐' },
-  { label: '加餐', value: '加餐' }
+  { label: '全部', value: 'all', icon: 'mdi:silverware' },
+  { label: '早餐', value: '早餐', icon: 'mdi:bread-slice' },
+  { label: '午餐', value: '午餐', icon: 'mdi:rice' },
+  { label: '晚餐', value: '晚餐', icon: 'mdi:noodles' },
+  { label: '加餐', value: '加餐', icon: 'mdi:food-apple' }
 ]
 
 // 今日统计计算属性
@@ -97,9 +97,9 @@ const getMealTypeColor = (type: string): 'success' | 'primary' | 'warning' | 'ne
 
 const getMealTypeIcon = (type: string) => {
   const iconMap: Record<string, string> = {
-    早餐: 'mdi:weather-sunny',
-    午餐: 'mdi:silverware-fork-knife',
-    晚餐: 'mdi:weather-night',
+    早餐: 'mdi:bread-slice',
+    午餐: 'mdi:rice',
+    晚餐: 'mdi:noodles',
     加餐: 'mdi:food-apple'
   }
   return iconMap[type] || 'mdi:food-apple'
@@ -498,12 +498,28 @@ onMounted(() => {
             <USelect
               id="diet-filter-meal-type"
               v-model="filterMealType"
-              value-key="value"
               :items="mealTypeOptions"
+              value-key="value"
               placeholder="全部"
               class="w-full"
               @change="loadData"
-            />
+            >
+              <template #leading="{ modelValue }">
+                <UIcon
+                  :name="
+                    (modelValue && mealTypeOptions.find((o) => o.value === modelValue)?.icon) ||
+                    'mdi:silverware'
+                  "
+                  :class="!modelValue || modelValue === 'all' ? 'text-gray-400' : ''"
+                />
+              </template>
+              <template #item="{ item }">
+                <div class="flex items-center gap-2">
+                  <UIcon :name="item.icon" />
+                  <span>{{ item.label }}</span>
+                </div>
+              </template>
+            </USelect>
           </div>
 
           <!-- 重置按钮 -->

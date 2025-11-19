@@ -202,7 +202,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
         <UFormField label="食物名称" name="foodName">
           <UInput v-model="state.foodName" placeholder="请输入食物名称">
             <template #leading>
-              <UIcon name="mdi:food-apple" />
+              <UIcon name="mdi:food" />
             </template>
           </UInput>
         </UFormField>

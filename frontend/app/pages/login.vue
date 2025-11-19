@@ -92,7 +92,7 @@ function switchToLogin() {
 
 <template>
   <div class="flex min-h-screen items-center justify-center p-6">
-    <UCard class="w-full max-w-md">
+    <UCard class="w-full max-w-sm">
       <template #header>
         <h2 class="text-center text-2xl font-bold">
           {{ isRegister ? '注册' : '登录' }}健康生活管理系统
@@ -108,7 +108,13 @@ function switchToLogin() {
         @submit="onLoginSubmit"
       >
         <UFormField label="邮箱" name="email">
-          <UInput v-model="loginState.email" type="email" placeholder="请输入邮箱" size="lg">
+          <UInput
+            v-model="loginState.email"
+            type="email"
+            placeholder="请输入邮箱"
+            size="lg"
+            class="w-full"
+          >
             <template #leading>
               <UIcon name="heroicons:envelope" />
             </template>
@@ -121,6 +127,7 @@ function switchToLogin() {
             :type="showPassword.login ? 'text' : 'password'"
             placeholder="请输入密码"
             size="lg"
+            class="w-full"
           >
             <template #leading>
               <UIcon name="heroicons:lock-closed" />
@@ -151,7 +158,12 @@ function switchToLogin() {
         @submit="onRegisterSubmit"
       >
         <UFormField label="昵称" name="nickname">
-          <UInput v-model="registerState.nickname" placeholder="请输入昵称" size="lg">
+          <UInput
+            v-model="registerState.nickname"
+            placeholder="请输入昵称"
+            size="lg"
+            class="w-full"
+          >
             <template #leading>
               <UIcon name="heroicons:user" />
             </template>
@@ -159,7 +171,13 @@ function switchToLogin() {
         </UFormField>
 
         <UFormField label="邮箱" name="email">
-          <UInput v-model="registerState.email" type="email" placeholder="请输入邮箱" size="lg">
+          <UInput
+            v-model="registerState.email"
+            type="email"
+            placeholder="请输入邮箱"
+            size="lg"
+            class="w-full"
+          >
             <template #leading>
               <UIcon name="heroicons:envelope" />
             </template>
@@ -172,6 +190,7 @@ function switchToLogin() {
             :type="showPassword.register ? 'text' : 'password'"
             placeholder="请输入密码"
             size="lg"
+            class="w-full"
           >
             <template #leading>
               <UIcon name="heroicons:lock-closed" />
@@ -192,6 +211,7 @@ function switchToLogin() {
             :type="showPassword.confirm ? 'text' : 'password'"
             placeholder="请再次输入密码"
             size="lg"
+            class="w-full"
           >
             <template #leading>
               <UIcon name="heroicons:lock-closed" />
