@@ -9,7 +9,7 @@ const minValue = defineModel<DateValue>('minValue', { default: new CalendarDate(
 const maxValue = defineModel<DateValue>('maxValue')
 const isOpen = toRef(false)
 
-const { formatYear, formatMonth } = useCustomFormatter(placeholder)
+const { formatYear, formatMonth } = useCustomFormatter(placeholder, 'zh-CN')
 const { selectedMode, toggleSelectMode } = useSelectMode()
 const {
   displayedYear,

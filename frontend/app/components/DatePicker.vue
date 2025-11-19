@@ -73,6 +73,7 @@ const handleDateSelect = (value: any) => {
         v-model:placeholder="calendarPlaceholder"
         :min-value="minValue"
         :max-value="maxValue"
+        locale="zh-CN"
         @update:model-value="handleDateSelect"
       >
         <template #heading="{ value }">
