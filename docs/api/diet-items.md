@@ -63,3 +63,11 @@
 ## `DELETE /diet-items/{dietItemID}`
 
 - **成功响应**：`{"code":1,"msg":"success","data":null}`；删除后查询该 ID 得到 `data = null`
+
+## AI 助手联动
+
+- `queryDietRecords`：查询逻辑复用 `GET /diet-items`
+- `addDietRecord`：将 AI 用户指令转换为 `POST /diet-items`
+- `updateDietRecord`：当用户要求“把早餐热量改成 300”时触发
+
+模型执行函数成功后会在 SSE 回复中告知新增/修改的记录 ID 以及卡路里分析结果

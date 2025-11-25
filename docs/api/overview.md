@@ -40,6 +40,21 @@
 - [sleep-items.md](./sleep-items.md)：睡眠记录接口
 - [chat.md](./chat.md)：AI 聊天接口
 
+## AI 助手函数能力
+
+`POST /chat/stream` 现在会自动调用一组受控函数来读写用户的健康数据，避免再通过前端绕行 REST 接口：
+
+- 系统工具：`getCurrentDate`
+- 身体数据：`queryBodyMetrics`、`addBodyMetric`
+- 睡眠数据：`querySleepRecords`、`addSleepRecord`、`updateSleepRecord`
+- 饮食数据：`queryDietRecords`、`addDietRecord`、`updateDietRecord`
+- 运动数据：`queryExerciseRecords`、`addExerciseRecord`、`updateExerciseRecord`
+- 联网搜索：`webSearch`（可返回实时健康/运动资讯）
+
+这些函数与对应的 REST API 使用同一套参数校验与业务规则，最终仍会透传到文档中列出的实体接口中。
+
+> 如需关闭联网搜索，可在 `application.properties` 中设置 `web.search.enabled=false`
+
 ## 服务端数据校验
 
 - 体征、饮食、运动、睡眠等记录接口会在 Controller 层对关键字段做范围与顺序校验

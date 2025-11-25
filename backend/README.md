@@ -23,6 +23,8 @@
 - **Spring AI OpenAI 1.0.0-M5** - OpenAI 兼容接口
 - **CommonMark 0.20.0** - Markdown 解析器
 - **Spring WebFlux** - SSE 流式响应支持
+- **OkHttp 4.12.0** - 联网搜索 HTTP 客户端
+- **Spring AI Function Calling** - `HealthDataFunctions`、`WebSearchFunction` 用于模型自动操作数据库和联网搜索
 
 ### 开发工具
 
@@ -74,6 +76,9 @@ backend/
 │   │   │   ├── config/                       # 配置类
 │   │   │   │   ├── AiConfig.java
 │   │   │   │   └── WebConfig.java
+│   │   │   ├── function/                     # Spring AI Function 定义
+│   │   │   │   ├── HealthDataFunctions.java
+│   │   │   │   └── WebSearchFunction.java
 │   │   │   └── utils/                        # 工具类
 │   │   └── resources/
 │   │       ├── application.properties        # 开发环境配置
@@ -265,7 +270,8 @@ docker-compose down
 - SSE 流式响应
 - Markdown 格式化
 - 自动重试机制（最多 3 次）
-- 超时配置（连接 60s，读写 120s）
+- 流式超时限制：若 60 秒未收到模型输出将返回“AI 服务响应超时”提示
+- 内置函数：健康数据 CRUD（Body/Sleep/Diet/Exercise）与联网搜索 `webSearch`
 
 SSE 流式接口调试示例：
 
@@ -344,6 +350,7 @@ Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - `JWT_SIGN_KEY`：JWT 签名密钥（必填）
 - `JWT_EXPIRE_TIME`：JWT 过期时间（毫秒），默认 `43200000`（12 小时）
 - `DEEPSEEK_API_KEY`：DeepSeek API Key
+- `WEB_SEARCH_ENABLED` / `web.search.enabled`：是否允许模型调用联网搜索，默认 `true`
 - `SERVER_PORT`：服务端口，默认 `8080`
 - `AVATAR_UPLOAD_DIR`：头像上传目录，容器内默认 `/app/avatars`
 

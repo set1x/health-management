@@ -45,12 +45,14 @@
 - **后端 (backend/)**：
   - Spring Boot 微服务，遵循 Controller-Service-Mapper 分层
   - 使用 MyBatis + PageHelper 访问 MySQL，统一封装 `Result` 响应结构，拦截器完成 JWT 鉴权
+  - 通过 function 将健康数据 CRUD 与联网搜索封装为 Spring AI Function，供模型安全调用
 - **数据层**：
   - MySQL 存储结构化健康指标数据和用户资料（覆盖身体/饮食/运动/睡眠）
   - 聊天上下文通过 `UserChatSessionManager` 搭配 `InMemoryChatMemory` 保存在内存中
 - **AI 能力**：
   - 借助 Spring AI OpenAI 模块调用 DeepSeek 大模型（DeepSeek-V3.2-Exp），支持 SSE 流式对话
-  - `ChatController` 负责对话上下文管理
+  - `ChatController` 负责对话上下文管理，并注入 `HealthDataFunctions` 与 `WebSearchFunction`
+
 - **基础设施**：
   - 容器化部署使用 Docker 与 docker-compose，后端与 MySQL 通过容器网络关联
 
@@ -73,9 +75,10 @@
 ### AI 咨询流程
 
 1. 前端 `AIChatPalette` 调起 SSE 连接 `POST /chat/stream` 并推送用户问题
-2. 后端 `ChatController` 调用 Spring AI，向 DeepSeek 发送上下文提示词
-3. 模型推理结果通过 SSE `data: {...}` 流持续回传，前端实时渲染
-4. 用户可调用 `DELETE /chat/memory` 清空上下文重新开始对话
+2. 后端 `ChatController` 调用 Spring AI，向 DeepSeek 发送上下文提示词，并根据模型需要依次触发 `HealthDataFunctions` / `WebSearchFunction`
+3. 函数执行结果（例如新增某条运动记录的 ID）会回写到模型上下文，推理结果通过 SSE `data: {...}` 流持续回传
+4. SSE 层自带 60 秒超时保护，遇到请求失败会推送友好降级提示
+5. 用户可调用 `DELETE /chat/memory` 清空上下文重新开始对话
 
 ## 数据流交互
 

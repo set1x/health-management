@@ -31,6 +31,21 @@
 
 - **请求体缺少或为空 `query`**：立即推送 `data: {"content":"消息不能为空"}`，随后发送 `event: close`
 
+## AI 工具清单
+
+聊天接口内部已经注册以下 Spring AI Function，模型会根据上下文自动调用：
+
+| 功能域 | 函数 | 说明 |
+| --- | --- | --- |
+| 系统工具 | `getCurrentDate` | 获取服务端当前日期时间，提示模型记录最新日期 |
+| 身体数据 | `queryBodyMetrics` / `addBodyMetric` | 查询或新增身高体重记录 |
+| 睡眠数据 | `querySleepRecords` / `addSleepRecord` / `updateSleepRecord` | 查询、添加或修改睡眠记录，自动校验时间顺序 |
+| 饮食数据 | `queryDietRecords` / `addDietRecord` / `updateDietRecord` | 管理饮食记录与卡路里估算 |
+| 运动数据 | `queryExerciseRecords` / `addExerciseRecord` / `updateExerciseRecord` | 仅支持预置的 15 种运动类型，新增后返回自增 ID |
+| 联网搜索 | `webSearch` | 通过 DuckDuckGo 获取实时健康资讯，可通过 `web.search.enabled` 开关禁用 |
+
+当用户让 AI “帮我记一条运动记录”或“查下昨天的睡眠”，后台会在保证权限的前提下直接调用对应函数并持久化，生成的执行结果会连同行为说明一起通过 SSE 返回
+
 ## `DELETE /chat/memory`
 
 清除当前用户的聊天上下文

@@ -68,3 +68,10 @@
 
 - `heightCM` 范围 `100-250`
 - `weightKG` 范围 `30-300`
+
+## AI 助手联动
+
+- `queryBodyMetrics`：由聊天接口触发，参数与 `GET /body-metrics` 保持一致
+- `addBodyMetric`：用于“帮我记录身高体重”等指令，完成后会返回新 `bodyMetricID` 并写入数据库
+
+所有函数都共用本页所述的校验规则，流式响应中会把函数执行结果与健康建议一起返回前端
