@@ -176,6 +176,12 @@ pnpm typecheck
 - **预渲染**: 公开页面静态化
 - **客户端专用组件**: `.client.vue` 后缀组件
 
+### 流式通信
+
+- `utils/sse.ts` 统一管理基于 Fetch 与 EventSource 的 SSE 订阅
+- 异步队列缓冲分片，确保 AI 消息严格按顺序渲染
+- 连接异常、超时、用户中止时主动结束流并抛出友好错误
+
 ### 类型安全
 
 - 全面使用 TypeScript 开发
