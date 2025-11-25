@@ -61,13 +61,20 @@ export default defineNuxtConfig({
     '/diet': { ssr: false },
     '/exercise': { ssr: false },
     '/sleep': { ssr: false },
-    '/profile': { ssr: false },
-
-    // 将 /api 请求代理到后端服务器
-    '/api/**': { proxy: { to: apiBaseUrl + '/**' } }
+    '/profile': { ssr: false }
   },
 
   compatibilityDate: '2025-01-15',
+
+  nitro: {
+    devProxy: {
+      '/api': {
+        target: apiBaseUrl,
+        changeOrigin: true,
+        secure: false
+      }
+    }
+  },
 
   eslint: {
     config: {
