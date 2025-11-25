@@ -66,7 +66,7 @@
 
 ## 系统架构
 
-系统采用前后端分离的微服务架构，使用 REST 与 SSE 通道交互，MySQL 提供数据存储，通过 Spring AI 对接通义千问，具体可参考 [系统架构蓝图](./docs/architecture.md)
+系统采用前后端分离的微服务架构，使用 REST 与 SSE 通道交互，MySQL 提供数据存储，通过 Spring AI 对接 DeepSeek 大模型，具体可参考 [系统架构蓝图](./docs/architecture.md)
 
 ## 项目结构
 

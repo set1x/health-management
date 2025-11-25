@@ -20,7 +20,7 @@
 
 ### AI 集成
 
-- **Spring AI Alibaba 1.0.0-M5.1** - 阿里云通义千问 AI 服务
+- **Spring AI OpenAI 1.0.0-M5** - OpenAI 兼容接口
 - **CommonMark 0.20.0** - Markdown 解析器
 - **Spring WebFlux** - SSE 流式响应支持
 
@@ -184,7 +184,7 @@ docker run -d \
   -e SPRING_PROFILES_ACTIVE=prod \
   -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/health_management_db \
   -e SPRING_DATASOURCE_PASSWORD=your_password \
-  -e SPRING_AI_DASHSCOPE_API_KEY=your_api_key \
+  -e DEEPSEEK_API_KEY=your_api_key \
   -e JWT_SIGN_KEY=your_jwt_key \
   --name health-backend \
   health-management-backend:latest
@@ -261,7 +261,7 @@ docker-compose down
 
 ### AI 集成
 
-- 阿里云通义千问模型（`qwen-turbo`）
+- DeepSeek 思考模型（`deepseek-reasoner`）
 - SSE 流式响应
 - Markdown 格式化
 - 自动重试机制（最多 3 次）
@@ -343,18 +343,13 @@ Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - `SPRING_DATASOURCE_PASSWORD`：数据库密码（必填）
 - `JWT_SIGN_KEY`：JWT 签名密钥（必填）
 - `JWT_EXPIRE_TIME`：JWT 过期时间（毫秒），默认 `43200000`（12 小时）
-- `SPRING_AI_DASHSCOPE_API_KEY`：通义千问 API Key（可选，仅启用 AI 时需要）
+- `DEEPSEEK_API_KEY`：DeepSeek API Key
 - `SERVER_PORT`：服务端口，默认 `8080`
 - `AVATAR_UPLOAD_DIR`：头像上传目录，容器内默认 `/app/avatars`
 
 ## 常见问题（FAQ）
 
-- Docker 拉取 MySQL 失败：如 `mysql:9.0` 不存在，建议将 `docker-compose.yml` 中镜像改为 `mysql:8.4` 或 `mysql:8.0`。
-- 返回未登录：确认前端按文档将 Token 放在 `Authorization: Bearer <JWT>` 或 `token` 头、或 Cookie `token`。
-- 启动报缺少密钥：确保设置了 `JWT_SIGN_KEY`，且与发放 Token 使用的密钥一致。
-- AI 请求超时：检查 `SPRING_AI_DASHSCOPE_API_KEY`，并确认网络可访问 DashScope。
-
-## 安全与依赖建议
-
-- 优先使用 Spring Boot 自带 Jackson 做 JSON 序列化，避免引入 Fastjson 历史安全风险；如需使用，请锁定安全版本并限制使用面。
-- 生产环境尽量避免使用里程碑/快照仓库依赖，优先选择稳定版。
+- Docker 拉取 MySQL 失败：如 `mysql:9.0` 不存在，建议将 `docker-compose.yml` 中镜像改为 `mysql:8.4` 或 `mysql:8.0`
+- 返回未登录：确认前端按文档将 Token 放在 `Authorization: Bearer <JWT>` 或 `token` 头、或 Cookie `token`
+- 启动报缺少密钥：确保设置了 `JWT_SIGN_KEY`，且与发放 Token 使用的密钥一致
+- AI 请求超时：检查 `DEEPSEEK_API_KEY`，并确认网络可访问 DeepSeek API（api.deepseek.com）

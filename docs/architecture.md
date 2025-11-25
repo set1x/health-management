@@ -19,7 +19,7 @@
 │  - 服务层封装业务逻辑                                     │
 │  - MyBatis + PageHelper 数据访问                          │
 │  - LoginCheckInterceptor 进行 JWT 校验                    │
-│  - Spring AI 调用 DashScope                               │
+│  - Spring AI 调用 DeepSeek API                            │
 └───────────────▲───────────────────────┬───────────────────┘
                 │JDBC                   │
                 │InMemory 会话上下文    │
@@ -31,8 +31,8 @@
                 │
                 │HTTPS
 ┌───────────────▼───────────────────────────────────────────┐
-│                  AI 服务 (阿里云通义千问)                 │
-│  - DashScope Chat Model                                   │
+│                    AI 服务 (DeepSeek)                     │
+│  - DeepSeek Chat Model (deepseek-chat)                    │
 │  - SSE 流式响应                                           │
 └───────────────────────────────────────────────────────────┘
 ```
@@ -49,7 +49,7 @@
   - MySQL 存储结构化健康指标数据和用户资料（覆盖身体/饮食/运动/睡眠）
   - 聊天上下文通过 `UserChatSessionManager` 搭配 `InMemoryChatMemory` 保存在内存中
 - **AI 能力**：
-  - 借助 Spring AI Alibaba 模块调用通义千问大模型，支持 SSE 流式对话
+  - 借助 Spring AI OpenAI 模块调用 DeepSeek 大模型（DeepSeek-V3.2-Exp），支持 SSE 流式对话
   - `ChatController` 负责对话上下文管理
 - **基础设施**：
   - 容器化部署使用 Docker 与 docker-compose，后端与 MySQL 通过容器网络关联
@@ -73,7 +73,7 @@
 ### AI 咨询流程
 
 1. 前端 `AIChatPalette` 调起 SSE 连接 `POST /chat/stream` 并推送用户问题
-2. 后端 `ChatController` 调用 Spring AI，向通义千问发送上下文提示词
+2. 后端 `ChatController` 调用 Spring AI，向 DeepSeek 发送上下文提示词
 3. 模型推理结果通过 SSE `data: {...}` 流持续回传，前端实时渲染
 4. 用户可调用 `DELETE /chat/memory` 清空上下文重新开始对话
 
@@ -93,7 +93,7 @@
 - **生产环境**：
   - 前端构建产物由 Nginx/CDN 托管，反向代理 `/api` 到后端服务
   - 后端运行在容器或虚拟机上，暴露 `8080` 端口，连接托管的 MySQL 实例
-  - AI 服务需要配置 `SPRING_AI_DASHSCOPE_API_KEY`，遵守服务调用限额
+  - AI 服务需要配置 `DEEPSEEK_API_KEY`，遵守服务调用限额
   - 建议开启 HTTPS、WAF、日志采集和链路监控
 
 ## 安全措施

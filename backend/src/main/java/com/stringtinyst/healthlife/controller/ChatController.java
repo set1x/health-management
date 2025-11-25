@@ -1,6 +1,5 @@
 package com.stringtinyst.healthlife.controller;
 
-import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
 import com.stringtinyst.healthlife.config.AiPromptTemplate;
 import com.stringtinyst.healthlife.pojo.Result;
 import com.stringtinyst.healthlife.utils.JwtUtils;
@@ -10,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
@@ -19,7 +19,7 @@ import reactor.core.publisher.Flux;
 @RequestMapping("/chat")
 public class ChatController {
 
-  @Autowired private DashScopeChatModel dashScopeChatModel;
+  @Autowired private ChatModel chatModel;
   @Autowired private UserChatSessionManager sessionManager;
   @Autowired private JwtUtils jwtUtils;
 
@@ -31,7 +31,7 @@ public class ChatController {
     ChatMemory chatMemory = sessionManager.getChatMemory(userId);
 
     ChatClient chatClient =
-        ChatClient.builder(dashScopeChatModel)
+        ChatClient.builder(chatModel)
             .defaultSystem(AiPromptTemplate.SYSTEM_PROMPT)
             .defaultAdvisors(new MessageChatMemoryAdvisor(chatMemory))
             .build();
@@ -67,7 +67,7 @@ public class ChatController {
 
     ChatMemory chatMemory = sessionManager.getChatMemory(userId);
     ChatClient chatClient =
-        ChatClient.builder(dashScopeChatModel)
+        ChatClient.builder(chatModel)
             .defaultSystem(AiPromptTemplate.SYSTEM_PROMPT)
             .defaultAdvisors(new MessageChatMemoryAdvisor(chatMemory))
             .build();

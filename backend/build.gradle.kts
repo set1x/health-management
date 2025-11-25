@@ -58,7 +58,7 @@ dependencies {
     implementation("com.alibaba:fastjson:1.2.83")
     
     // AI Integration
-    implementation("com.alibaba.cloud.ai:spring-ai-alibaba-starter:1.0.0-M5.1")
+    implementation("org.springframework.ai:spring-ai-openai-spring-boot-starter:1.0.0-M5")
     
     // Markdown Parser
     implementation("org.commonmark:commonmark:0.20.0")
