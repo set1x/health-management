@@ -105,12 +105,6 @@ backend/
 - Gradle 8.12+
 - MySQL 8.0+
 
-### 安装依赖
-
-```bash
-./gradlew build -x test
-```
-
 ### 环境变量配置
 
 参照 `.env.example` 配置 `.env` 文件
@@ -122,7 +116,7 @@ cd backend
 export $(grep -v '^#' .env | xargs)
 ```
 
-### 数据库初始化
+### 数据库初始化（默认已初始化）
 
 ```bash
 # 方式 1：手动导入
@@ -165,19 +159,20 @@ docker-compose up -d mysql
 ### 构建部署
 
 ```bash
-# 构建 JAR 包
-./gradlew build
+# 构建生产用 JAR（本地执行）
+./gradlew clean bootJar
 
-# 运行 JAR
-java -jar build/libs/health-management-backend-0.0.1-SNAPSHOT.jar
-
-# 指定环境
+# 本地验证（默认走 application-prod 配置）
 java -jar build/libs/health-management-backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
 ```
+
+> 生产环境只需把 `build/libs/` 下的 jar 文件与部署所需的 `Dockerfile`、`docker-compose.yml`、`.env` 拷贝到服务器即可
 
 ## Docker 部署
 
 ### 单独构建后端镜像
+
+> 先在本地执行 `./gradlew clean bootJar`，确保 `build/libs/health-management-backend-*.jar` 已生成，再继续以下步骤
 
 ```bash
 # 构建镜像
@@ -187,30 +182,41 @@ docker build -t health-management-backend:latest .
 docker run -d \
   -p 8080:8080 \
   -e SPRING_PROFILES_ACTIVE=prod \
-  -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/health_management_db \
+  -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/health_management_db?useSSL=false&allowPublicKeyRetrieval=true \
+  -e SPRING_DATASOURCE_USERNAME=root \
   -e SPRING_DATASOURCE_PASSWORD=your_password \
   -e DEEPSEEK_API_KEY=your_api_key \
   -e JWT_SIGN_KEY=your_jwt_key \
+  -e JWT_EXPIRE_TIME=43200000 \
+  -e AVATAR_UPLOAD_DIR=/app/avatars \
   --name health-backend \
   health-management-backend:latest
 ```
 
-> 镜像构建阶段会执行 `gradlew spotlessCheck`，若存在未格式化的 Java 文件，构建会直接失败
+镜像更新流程：
+
+1. 本地重新执行 `./gradlew clean bootJar`
+2. 将新的 `build/libs/*.jar`、`Dockerfile`、`.env`、`docker-compose.yml` 同步到服务器
+3. 在服务器 `docker build -t health-management-backend:latest .`
+4. `docker stop health-management-backend && docker rm health-management-backend`
+5. 重新 `docker run ...` 或由 Compose 管理
 
 ### 使用 Docker Compose
 
 配置相关环境变量
 
 ```bash
-# 启动所有服务
-docker-compose up -d
+# 第一次部署 / 同步新 JAR 后
+docker compose up -d --build
 
-# 查看日志
-docker-compose logs -f backend
+# 查看后端日志
+docker compose logs -f backend
 
 # 停止服务
-docker-compose down
+docker compose down
 ```
+
+> `.env` 中需提供所有敏感环境变量（数据库密码、JWT、AI Key 等），并与 `docker-compose.yml` 保持一致；服务器只保留 JAR、Dockerfile、Compose、`.env` 即可
 
 ### Docker Compose 服务说明
 
