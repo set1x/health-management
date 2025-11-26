@@ -80,6 +80,11 @@ health-management/
 │   ├── app.vue                       # 根组件
 │   ├── error.vue                     # 错误页面
 │   └── spa-loading-template.html     # SPA 加载模板
+├── tests/
+│   └── postman/
+│       ├── api.postman_collection.json     # API 集合
+│       ├── local.postman_environment.json  # 本地环境变量
+│       └── avatar.png                      # 头像上传占位图
 ├── public/                           # 静态资源
 ├── nuxt.config.ts                    # Nuxt 配置
 ├── tsconfig.json                     # TypeScript 配置
@@ -216,3 +221,20 @@ pnpm typecheck
 - 客户端启动时自动初始化认证状态
 - 路由守卫保护
 - 登录状态持久化（Cookie + useState）
+
+## Postman 测试集合
+
+为便于在本地验证前端依赖的 API，`./tests/postman/` 目录提供了一套与页面调用保持一致的 Postman 集合，并预置：
+
+- `avatar.png`：供头像上传接口使用的占位图片（路径写在环境变量 `avatarPath` 内）
+- `wrongPassword`、`invalidWeight`、`invalidBedTime` 等变量：用于错误数据用例，覆盖常见的输入非法场景
+
+运行 `pnpm api:test`，命令会自动调用 `tests/postman/api.postman_collection.json` 与 `tests/postman/local.postman_environment.json`
+
+若需自定义参数，可追加 Newman 原生选项，例如：
+
+```bash
+pnpm api:test --reporters cli,html --reporter-html-export ./newman-report.html
+```
+
+环境变量可在 JSON 文件内修改，或通过 `pnpm api:test --env-var baseUrl=https://api.example.com` 临时覆盖；若要验证更多错误数据，可新增变量并在集合里引用即可

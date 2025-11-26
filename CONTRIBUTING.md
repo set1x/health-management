@@ -66,6 +66,7 @@ cd frontend
 pnpm lint        # 代码检查
 pnpm lint:fix    # 自动修复
 pnpm typecheck   # 类型检查
+pnpm api:test    # 调用 Newman 运行 Postman API 回归
 ```
 
 ### 后端

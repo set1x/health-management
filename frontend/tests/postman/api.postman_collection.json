@@ -1,0 +1,1115 @@
+{
+  "info": {
+    "_postman_id": "c9c0c7a3-e3c5-4a66-b5a3-4a294d8a0011",
+    "name": "Health Management Frontend API",
+    "description": "Collection that mirrors the Nuxt frontend calls for quick regression checks.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Authentication entry points used by the login and register views.",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"nickname\": \"{{nickname}}\",\n  \"gender\": \"{{gender}}\",\n  \"dateOfBirth\": \"{{dateOfBirth}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Register success or already exists', function () {",
+                  "  pm.expect([0, 1]).to.include(jsonData.code);",
+                  "});",
+                  "if (jsonData.code === 1 && jsonData.data) {",
+                  "  pm.environment.set('userId', jsonData.data);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Login succeeded', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "  pm.expect(jsonData.data, 'token should exist').to.be.a('string');",
+                  "});",
+                  "pm.environment.set('token', jsonData.data);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Login (Wrong Password)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{wrongPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Wrong password handled', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Wrong password rejected', function () {",
+                  "  pm.expect(jsonData.code).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "description": "Profile and avatar endpoints used throughout the dashboard/profile pages.",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "profile"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Profile loaded', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});",
+                  "if (jsonData.data && jsonData.data.userID) {",
+                  "  pm.environment.set('userId', jsonData.data.userID);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nickname\": \"Postman Tester\",\n  \"gender\": \"{{gender}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "profile"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Profile updated', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Upload Avatar",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "src": "{{avatarPath}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/avatar",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "avatar"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Avatar upload status', function () {",
+                  "  pm.expect([200, 400]).to.include(pm.response.code);",
+                  "});",
+                  "let jsonData = {};",
+                  "try {",
+                  "  jsonData = pm.response.json();",
+                  "} catch (e) {",
+                  "  jsonData = {};",
+                  "}",
+                  "if (jsonData && typeof jsonData.code !== 'undefined') {",
+                  "  pm.test('Avatar uploaded', function () {",
+                  "    pm.expect(jsonData.code).to.eql(1);",
+                  "  });",
+                  "} else {",
+                  "  pm.test('Avatar upload returned non-JSON body', function () {",
+                  "    pm.expect([200, 400]).to.include(pm.response.code);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Get Avatar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user/avatar",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "avatar"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Avatar response status', function () {",
+                  "  pm.expect([200, 401, 404]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Body Metrics",
+      "description": "CRUD requests for height/weight records.",
+      "item": [
+        {
+          "name": "List Body Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/body-metrics?page=1&pageSize=10&userID={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["body-metrics"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                },
+                {
+                  "key": "userID",
+                  "value": "{{userId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Body metrics listed', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});",
+                  "if (jsonData.data && Array.isArray(jsonData.data.rows) && jsonData.data.rows.length > 0) {",
+                  "  pm.environment.set('bodyMetricId', jsonData.data.rows[0].bodyMetricID);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Create Body Metric",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userID\": \"{{userId}}\",\n  \"heightCM\": 172.5,\n  \"weightKG\": 68.3,\n  \"recordDate\": \"{{recordDate}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/body-metrics",
+              "host": ["{{baseUrl}}"],
+              "path": ["body-metrics"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Body metric created', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});",
+                  "if (jsonData.data) {",
+                  "  pm.environment.set('bodyMetricId', jsonData.data);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Create Body Metric (Invalid Weight)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userID\": \"{{userId}}\",\n  \"heightCM\": 172.5,\n  \"weightKG\": {{invalidWeight}},\n  \"recordDate\": \"{{recordDate}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/body-metrics",
+              "host": ["{{baseUrl}}"],
+              "path": ["body-metrics"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Invalid weight rejected', function () {",
+                  "  pm.expect(jsonData.code).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Update Body Metric",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userID\": \"{{userId}}\",\n  \"heightCM\": 173.0,\n  \"weightKG\": 67.5,\n  \"recordDate\": \"{{recordDate}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/body-metrics/{{bodyMetricId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["body-metrics", "{{bodyMetricId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Body metric updated', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Delete Body Metric",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/body-metrics/{{bodyMetricId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["body-metrics", "{{bodyMetricId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Body metric deleted', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});",
+                  "pm.environment.unset('bodyMetricId');"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Diet Records",
+      "description": "Endpoints used by the diet page and quick dialog.",
+      "item": [
+        {
+          "name": "List Diet Records",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/diet-items?page=1&pageSize=10&userID={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["diet-items"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                },
+                {
+                  "key": "userID",
+                  "value": "{{userId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Diet records listed', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});",
+                  "if (jsonData.data && Array.isArray(jsonData.data.rows) && jsonData.data.rows.length > 0) {",
+                  "  pm.environment.set('dietItemId', jsonData.data.rows[0].dietItemID);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Create Diet Record",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userID\": \"{{userId}}\",\n  \"recordDate\": \"{{recordDate}}\",\n  \"foodName\": \"Oatmeal\",\n  \"mealType\": \"Breakfast\",\n  \"estimatedCalories\": 320\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/diet-items",
+              "host": ["{{baseUrl}}"],
+              "path": ["diet-items"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Diet record created', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});",
+                  "if (jsonData.data) {",
+                  "  pm.environment.set('dietItemId', jsonData.data);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Update Diet Record",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userID\": \"{{userId}}\",\n  \"recordDate\": \"{{recordDate}}\",\n  \"foodName\": \"Oatmeal\",\n  \"mealType\": \"Breakfast\",\n  \"estimatedCalories\": 300\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/diet-items/{{dietItemId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["diet-items", "{{dietItemId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Diet record updated', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Delete Diet Record",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/diet-items/{{dietItemId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["diet-items", "{{dietItemId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Diet record deleted', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});",
+                  "pm.environment.unset('dietItemId');"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Exercise Records",
+      "description": "Endpoints used by the exercise page and quick dialog.",
+      "item": [
+        {
+          "name": "List Exercise Records",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/exercise-items?page=1&pageSize=10&userID={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["exercise-items"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                },
+                {
+                  "key": "userID",
+                  "value": "{{userId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Exercise records listed', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});",
+                  "if (jsonData.data && Array.isArray(jsonData.data.rows) && jsonData.data.rows.length > 0) {",
+                  "  pm.environment.set('exerciseItemId', jsonData.data.rows[0].exerciseItemID);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Create Exercise Record",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userID\": \"{{userId}}\",\n  \"recordDate\": \"{{recordDate}}\",\n  \"exerciseType\": \"Running\",\n  \"durationMinutes\": 45,\n  \"estimatedCaloriesBurned\": 480\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/exercise-items",
+              "host": ["{{baseUrl}}"],
+              "path": ["exercise-items"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Exercise record created', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});",
+                  "if (jsonData.data) {",
+                  "  pm.environment.set('exerciseItemId', jsonData.data);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Update Exercise Record",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userID\": \"{{userId}}\",\n  \"recordDate\": \"{{recordDate}}\",\n  \"exerciseType\": \"Running\",\n  \"durationMinutes\": 30,\n  \"estimatedCaloriesBurned\": 400\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/exercise-items/{{exerciseItemId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["exercise-items", "{{exerciseItemId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Exercise record updated', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Delete Exercise Record",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/exercise-items/{{exerciseItemId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["exercise-items", "{{exerciseItemId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Exercise record deleted', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});",
+                  "pm.environment.unset('exerciseItemId');"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sleep Records",
+      "description": "Endpoints used by the sleep page and quick dialog.",
+      "item": [
+        {
+          "name": "List Sleep Records",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/sleep-items?page=1&pageSize=10&userID={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["sleep-items"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                },
+                {
+                  "key": "userID",
+                  "value": "{{userId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Sleep records listed', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});",
+                  "if (jsonData.data && Array.isArray(jsonData.data.rows) && jsonData.data.rows.length > 0) {",
+                  "  pm.environment.set('sleepItemId', jsonData.data.rows[0].sleepItemID);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Create Sleep Record",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userID\": \"{{userId}}\",\n  \"recordDate\": \"{{recordDate}}\",\n  \"bedTime\": \"{{bedTime}}\",\n  \"wakeTime\": \"{{wakeTime}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/sleep-items",
+              "host": ["{{baseUrl}}"],
+              "path": ["sleep-items"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Sleep record created', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});",
+                  "if (jsonData.data) {",
+                  "  pm.environment.set('sleepItemId', jsonData.data);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Create Sleep Record (Invalid Order)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userID\": \"{{userId}}\",\n  \"recordDate\": \"{{recordDate}}\",\n  \"bedTime\": \"{{invalidBedTime}}\",\n  \"wakeTime\": \"{{invalidWakeTime}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/sleep-items",
+              "host": ["{{baseUrl}}"],
+              "path": ["sleep-items"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Invalid sleep order rejected', function () {",
+                  "  pm.expect(jsonData.code).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Update Sleep Record",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userID\": \"{{userId}}\",\n  \"recordDate\": \"{{recordDate}}\",\n  \"bedTime\": \"{{bedTime}}\",\n  \"wakeTime\": \"{{wakeTime}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/sleep-items/{{sleepItemId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["sleep-items", "{{sleepItemId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Sleep record updated', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Delete Sleep Record",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/sleep-items/{{sleepItemId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["sleep-items", "{{sleepItemId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Sleep record deleted', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});",
+                  "pm.environment.unset('sleepItemId');"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "description": "AI endpoints referenced by the chat page.",
+      "item": [
+        {
+          "name": "Delete Chat Memory",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/chat/memory",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "memory"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const jsonData = pm.response.json();",
+                  "pm.test('Chat memory cleared', function () {",
+                  "  pm.expect(jsonData.code).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Chat Stream (SSE)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/event-stream"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"Give me a quick health tip\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/chat/stream",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "stream"]
+            },
+            "description": "Streaming endpoint. Use Send and Download or the Postman console to inspect SSE chunks."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [],
+  "variable": []
+}
