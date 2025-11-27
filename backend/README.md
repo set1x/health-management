@@ -146,6 +146,12 @@ docker-compose up -d mysql
 ./gradlew build -x test
 ```
 
+> 测试说明
+>
+> - `test` Profile 会自动加载 `src/test/resources/application-test.properties`，使用 **H2** 内存数据库与 `schema.sql`、`data.sql`，CI 与本地无需依赖外部 MySQL
+> - MyBatis 切片测试（`@MybatisTest`）直接校验 Mapper SQL，Service 与拦截器/Controller 则通过 Mockito、`@WebMvcTest` 做行为验证
+> - AI、外呼等远程能力在测试 Profile 下默认关闭，确保无 GUI、无外网环境也能稳定运行
+
 ### 代码格式化
 
 ```bash
