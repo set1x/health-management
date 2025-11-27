@@ -147,6 +147,27 @@ pnpm format:fix
 pnpm typecheck
 ```
 
+### 单元测试
+
+```bash
+# 运行测试（监听模式）
+pnpm test
+
+# 运行测试（单次执行）
+pnpm test:run
+
+# 运行测试并生成覆盖率报告
+pnpm test:coverage
+```
+
+测试文件位于 `app/tests/` 目录，覆盖：
+
+- **工具函数**: `dateUtils.spec.ts`, `metricUtils.spec.ts`, `sse.spec.ts`
+- **Composables**: `composables/useAuth.spec.ts`, `composables/useECharts.spec.ts`
+- **组件**: `components/*.spec.ts` (DatePicker, YearMonthSelect, QuickBodyDataDialog 等)
+
+覆盖率报告生成在 `coverage/` 目录
+
 ## 架构特性
 
 ### 混合渲染策略

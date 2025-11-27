@@ -25,10 +25,24 @@
 
 ### 测试覆盖
 
-- [ ] **单元测试** (截止日期: 11 月 28 日)
-  - [ ] 核心组件测试 (截止日期: 11 月 26 日)
-  - [ ] 工具函数测试 (截止日期: 11 月 27 日)
-  - [ ] Composables 测试 (截止日期: 11 月 28 日)
+- [x] **单元测试** (完成于 11 月 27 日)
+  - [x] 工具函数测试 (完成于 11 月 27 日)
+    - dateUtils: 日期格式化、转换
+    - metricUtils: BMI 计算、状态判断
+    - sse: SSE 流式请求处理
+  - [x] Composables 测试 (完成于 11 月 27 日)
+    - useAuth: 认证状态管理
+    - useECharts: 图表初始化与销毁
+  - [x] 组件测试 (完成于 11 月 27 日)
+    - DatePicker: 日期选择器
+    - YearMonthSelect: 年月选择器
+    - QuickBodyDataDialog: 快速记录体重
+    - QuickDietDialog: 快速记录饮食
+    - QuickExerciseDialog: 快速记录运动
+    - QuickSleepDialog: 快速记录睡眠
+    - AIChatPalette: AI 助手快捷入口
+    - CaloriesChart: 卡路里图表
+    - WeightChart: 体重图表
 
 - [ ] **集成测试** (截止日期: 12 月 3 日)
   - [x] API 测试 (完成于 11 月 27 日)
@@ -53,6 +67,7 @@
 
 - 完成前端 API 回归测试
 - 后端引入 H2 测试配置与 JWT、密码、拦截器、Mapper、Service、Controller 等核心用例
+- 完成前端所有工具函数，Composables 和组件的测试
 
 ### 2025-11-25
 
