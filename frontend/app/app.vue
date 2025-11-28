@@ -8,5 +8,6 @@
         }"
       />
     </NuxtLayout>
+    <PWAPrompt />
   </UApp>
 </template>
