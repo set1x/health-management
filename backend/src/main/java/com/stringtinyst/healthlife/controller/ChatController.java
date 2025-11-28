@@ -12,6 +12,8 @@ import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
@@ -53,8 +55,8 @@ public class ChatController {
     return Result.success("已开始新对话");
   }
 
-  @PostMapping(value = "/stream", produces = "text/event-stream;charset=UTF-8")
-  public Flux<String> chatStream(
+  @PostMapping(value = "/stream")
+  public ResponseEntity<Flux<String>> chatStream(
       @RequestBody Map<String, Object> request,
       @RequestHeader("Authorization") String authorization) {
 
@@ -63,7 +65,12 @@ public class ChatController {
     String message = (String) request.get("query");
 
     if (message == null || message.trim().isEmpty()) {
-      return Flux.just("data: {\"content\":\"消息不能为空\"}\n\n", "event: close\n\n");
+      return ResponseEntity.ok()
+          .contentType(MediaType.TEXT_EVENT_STREAM)
+          .header("Cache-Control", "no-cache, no-store, must-revalidate")
+          .header("X-Accel-Buffering", "no") // 禁用 Nginx 代理缓冲
+          .header("Connection", "keep-alive")
+          .body(Flux.just("data: {\"content\":\"消息不能为空\"}\n\n", "event: close\n\n"));
     }
 
     ChatMemory chatMemory = sessionManager.getChatMemory(userId);
@@ -91,31 +98,39 @@ public class ChatController {
                 "webSearch")
             .build();
 
-    return chatClient
-        .prompt()
-        .user(enhancedMessage)
-        .advisors(spec -> spec.param("conversation_id", userId).param("retrieve_size", 10))
-        .stream()
-        .content()
-        .timeout(Duration.ofSeconds(60))
-        .filter(content -> content != null && !content.isEmpty())
-        .map(content -> "{\"content\":\"" + escapeJson(content) + "\"}")
-        .onErrorResume(
-            error -> {
-              log.error("流式聊天错误 - 用户ID: {}, 错误: {}", userId, error.getMessage(), error);
-              String errorRaw = error.getMessage() == null ? "" : error.getMessage();
-              String errorMessage;
-              if (errorRaw.contains("503")) {
-                errorMessage = "AI 服务暂时不可用，请稍后重试";
-              } else if (errorRaw.contains("429")) {
-                errorMessage = "请求过于频繁，请稍后重试";
-              } else if (errorRaw.contains("Did not observe any item")) {
-                errorMessage = "AI 服务响应超时，请稍后重试";
-              } else {
-                errorMessage = "抱歉，处理您的请求时出现错误，请稍后重试";
-              }
-              return Flux.just("{\"content\":\"" + escapeJson(errorMessage) + "\"}");
-            });
+    Flux<String> responseStream =
+        chatClient
+            .prompt()
+            .user(enhancedMessage)
+            .advisors(spec -> spec.param("conversation_id", userId).param("retrieve_size", 10))
+            .stream()
+            .content()
+            .timeout(Duration.ofSeconds(60))
+            .filter(content -> content != null && !content.isEmpty())
+            .map(content -> "{\"content\":\"" + escapeJson(content) + "\"}")
+            .onErrorResume(
+                error -> {
+                  log.error("流式聊天错误 - 用户ID: {}, 错误: {}", userId, error.getMessage(), error);
+                  String errorRaw = error.getMessage() == null ? "" : error.getMessage();
+                  String errorMessage;
+                  if (errorRaw.contains("503")) {
+                    errorMessage = "AI 服务暂时不可用，请稍后重试";
+                  } else if (errorRaw.contains("429")) {
+                    errorMessage = "请求过于频繁，请稍后重试";
+                  } else if (errorRaw.contains("Did not observe any item")) {
+                    errorMessage = "AI 服务响应超时，请稍后重试";
+                  } else {
+                    errorMessage = "抱歉，处理您的请求时出现错误，请稍后重试";
+                  }
+                  return Flux.just("{\"content\":\"" + escapeJson(errorMessage) + "\"}");
+                });
+
+    return ResponseEntity.ok()
+        .contentType(MediaType.TEXT_EVENT_STREAM)
+        .header("Cache-Control", "no-cache, no-store, must-revalidate")
+        .header("X-Accel-Buffering", "no") // 禁用 Nginx 代理缓冲
+        .header("Connection", "keep-alive")
+        .body(responseStream);
   }
 
   private String escapeJson(String str) {

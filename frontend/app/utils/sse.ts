@@ -135,60 +135,106 @@ export async function ssePost<T>(path: string, options: SSEPostOptions) {
         const reader = body.getReader()
         let buffer = ''
 
+        /**
+         * 解析连续的 JSON 对象流
+         * 支持格式: {"content":"a"}{"content":"b"} 或标准 SSE data: 格式
+         */
         const processBuffer = async (flushAll = false) => {
-          buffer = buffer.replace(/\r/g, '\n')
-          const blocks = buffer.split('\n\n')
-          buffer = flushAll ? '' : (blocks.pop() ?? '')
+          // 处理标准 SSE 格式的 close 事件
+          if (buffer.includes('event: close') || buffer.includes('event:close')) {
+            close()
+            await reader.cancel()
+            return true
+          }
 
-          for (const block of blocks) {
-            if (!block.trim()) {
-              continue
+          // 尝试解析连续的 JSON 对象
+          let searchStart = 0
+          while (searchStart < buffer.length) {
+            while (searchStart < buffer.length && /\s/.test(buffer[searchStart] ?? '')) {
+              searchStart++
             }
 
-            const lines = block.split('\n')
-            const dataLines: string[] = []
-            let eventType = 'message'
+            if (searchStart >= buffer.length) {
+              break
+            }
 
-            for (const rawLine of lines) {
-              const line = rawLine.trim()
-              if (!line) {
+            // 处理标准 SSE data: 前缀
+            if (buffer.slice(searchStart).startsWith('data:')) {
+              searchStart += 5
+              while (searchStart < buffer.length && buffer[searchStart] === ' ') {
+                searchStart++
+              }
+            }
+
+            // 查找 JSON 对象的起始位置
+            const jsonStart = buffer.indexOf('{', searchStart)
+            if (jsonStart === -1) {
+              break
+            }
+
+            // 尝试找到完整的 JSON 对象
+            let braceCount = 0
+            let jsonEnd = -1
+            let inString = false
+            let escapeNext = false
+
+            for (let i = jsonStart; i < buffer.length; i++) {
+              const char = buffer[i]
+
+              if (escapeNext) {
+                escapeNext = false
                 continue
               }
 
-              if (line.startsWith('event:')) {
-                eventType = line.slice(6).trim()
+              if (char === '\\' && inString) {
+                escapeNext = true
                 continue
               }
 
-              if (line.startsWith('data:')) {
-                dataLines.push(line.slice(5).trim())
+              if (char === '"') {
+                inString = !inString
+                continue
+              }
+
+              if (!inString) {
+                if (char === '{') {
+                  braceCount++
+                } else if (char === '}') {
+                  braceCount--
+                  if (braceCount === 0) {
+                    jsonEnd = i
+                    break
+                  }
+                }
               }
             }
 
-            if (eventType === 'close') {
-              close()
-              await reader.cancel()
-              return true
-            }
-
-            if (dataLines.length === 0) {
-              continue
-            }
-
-            let payload = dataLines.join('\n')
-
-            if (payload.startsWith('data:')) {
-              const candidate = payload.slice(5).trimStart()
-              if (candidate.startsWith('{') || candidate.startsWith('[')) {
-                payload = candidate
+            // 如果没有找到完整的 JSON，保留 buffer 等待更多数据
+            if (jsonEnd === -1) {
+              if (flushAll) {
+                // 最后一次处理，尝试解析剩余内容
+                buffer = ''
+              } else {
+                // 保留从 jsonStart 开始的内容
+                buffer = buffer.slice(jsonStart)
               }
+              break
             }
+
+            // 提取并解析 JSON
+            const jsonStr = buffer.slice(jsonStart, jsonEnd + 1)
             try {
-              const parsed = JSON.parse(payload)
+              const parsed = JSON.parse(jsonStr)
               pushValue(parsed)
             } catch {
-              continue
+              // JSON 解析失败，跳过这个对象
             }
+
+            searchStart = jsonEnd + 1
+          }
+
+          if (searchStart > 0 && searchStart <= buffer.length) {
+            buffer = buffer.slice(searchStart)
           }
 
           return false
