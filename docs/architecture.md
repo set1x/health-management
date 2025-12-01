@@ -42,6 +42,7 @@
 - **前端 (frontend/)**：
   - 基于 Nuxt 4 组合式 API 实现的 SPA/SSR 混合应用，负责页面渲染、数据可视化和交互逻辑
   - 借助 `useState`、`useCookie`、`useFetch` 等组合式工具管理认证态和数据请求
+  - 通过 `server/middleware/api-proxy.ts` 复用运行时 `NUXT_PUBLIC_API_BASE`，无论开发或部署环境都统一将 `/api/*` 请求反向代理到后端
 - **后端 (backend/)**：
   - Spring Boot 微服务，遵循 Controller-Service-Mapper 分层
   - 使用 MyBatis + PageHelper 访问 MySQL，统一封装 `Result` 响应结构，拦截器完成 JWT 鉴权
@@ -60,7 +61,7 @@
 
 ### 用户认证
 
-1. 用户在前端提交邮箱与密码到 `/auth/login`
+1. 用户在前端通过 `/api/auth/login` 发起登录请求（Nitro 中间件/反向代理会转发为后端的 `/auth/login`）
 2. 后端验证后签发 JWT，返回标准响应 `Result{code=1, data=token}`
 3. 前端通过 Cookie 与 `useState` 持久化 Token，路由中间件 `auth.ts` 根据 Token 控制访问
 4. 后端拦截器 `LoginCheckInterceptor` 在每个受保护接口执行校验，并对无效 Token 做统一错误响应
@@ -90,7 +91,7 @@
 ## 部署拓扑
 
 - **开发环境**：
-  - 前端：`pnpm dev` 启动本地服务，通过 Vite 代理转发 `/api` 请求到后端
+  - 前端：`pnpm dev` 启动后由 Nuxt Nitro `devProxy` 配合 `server/middleware/api-proxy.ts` 统一转发 `/api` 请求到后端
   - 后端：`./gradlew bootRun`，使用本地 MySQL 或 docker-compose
 
 - **生产环境**：
@@ -101,7 +102,7 @@
 
 ## 安全措施
 
-- **鉴权**：JWT + 拦截器，集中校验所有受保护接口的访问令牌
+- **鉴权**：JWT + 拦截器，集中校验所有受保护接口的访问令牌，并通过 `AntPathMatcher` 维护 `/auth/**` 与 `/api/auth/**` 白名单
 - **输入校验**：Controller 层对用户输入进行校验，并在 Service 层执行业务验证
 - **日志监控**：利用 Spring Boot Actuator 提供健康检查，结合集中化日志便于排错
 - **数据保护**：认证信息与敏感字段应在响应中适当脱敏

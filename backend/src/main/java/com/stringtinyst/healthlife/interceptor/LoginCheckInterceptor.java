@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
@@ -17,12 +18,26 @@ import org.springframework.web.servlet.ModelAndView;
 @Component
 public class LoginCheckInterceptor implements HandlerInterceptor {
 
+  private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
+  private static final String[] AUTH_WHITELIST = {
+    "/actuator/**",
+    "/error",
+    "/auth/login",
+    "/auth/register",
+    "/api/auth/login",
+    "/api/auth/register"
+  };
+
   @Autowired private JwtUtils jwtUtils;
 
   @Override
   public boolean preHandle(HttpServletRequest req, HttpServletResponse resp, Object handler)
       throws Exception {
     String url = req.getRequestURI().toString();
+
+    if (isWhitelisted(url)) {
+      return true;
+    }
 
     // 支持三种格式：1. token header  2. Authorization: Bearer <token>  3. Cookie 中的 token
     String jwt = req.getHeader("token");
@@ -66,6 +81,15 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
       return false;
     }
     return true;
+  }
+
+  private boolean isWhitelisted(String url) {
+    for (String pattern : AUTH_WHITELIST) {
+      if (PATH_MATCHER.match(pattern, url)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override

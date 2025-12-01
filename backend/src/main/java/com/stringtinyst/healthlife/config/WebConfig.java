@@ -11,6 +11,15 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
 
+  private static final String[] AUTH_WHITELIST = {
+    "/actuator/**",
+    "/error",
+    "/auth/login",
+    "/auth/register",
+    "/api/auth/login",
+    "/api/auth/register"
+  };
+
   private final LoginCheckInterceptor loginCheckInterceptor;
 
   @Override
@@ -18,6 +27,6 @@ public class WebConfig implements WebMvcConfigurer {
     registry
         .addInterceptor(loginCheckInterceptor)
         .addPathPatterns("/**")
-        .excludePathPatterns("/actuator/**", "/auth/login", "/auth/register", "/error");
+        .excludePathPatterns(AUTH_WHITELIST);
   }
 }

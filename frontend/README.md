@@ -79,6 +79,11 @@
 - 异步队列缓冲分片，确保 AI 消息严格按顺序渲染
 - 连接异常、超时、用户中止时主动结束流并抛出友好错误
 
+### 统一 API 代理
+
+- `nitro.devProxy` 在开发模式下将 `/api/*` 请求直接代理到配置的后端地址
+- `server/middleware/api-proxy.ts` 在 Nitro Server 中兜底：无论是 SSR、Serverless 还是 edge 部署，都会复用同一配置转发请求并透传鉴权头
+
 ### 类型安全
 
 - 全面使用 TypeScript 开发
@@ -146,6 +151,9 @@ health-management/
 │   ├── app.vue                       # 根组件
 │   ├── error.vue                     # 错误页面
 │   └── spa-loading-template.html     # SPA 加载模板
+├── server/
+│   └── middleware/
+│       └── api-proxy.ts              # Nitro Server 反向代理 `/api/*`
 ├── e2e/                              # E2E 测试（Playwright）
 │   ├── home.spec.ts                  # 首页测试
 │   └── login.spec.ts                 # 登录/注册页测试
@@ -185,6 +193,8 @@ pnpm dev
 ```
 
 应用将在 `http://localhost:3000` 启动
+
+> 如需联调不同后端环境，设置 `NUXT_PUBLIC_API_BASE`（或在 `.env` 中写入）即可，`nitro.devProxy` 与 `server/middleware/api-proxy.ts` 会自动复用该值
 
 ### 构建生产版本
 

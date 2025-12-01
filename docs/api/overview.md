@@ -22,7 +22,7 @@
 
 ## 鉴权约定
 
-全局拦截器要求除 `/auth/login`、`/auth/register`、`/actuator/**`、`/error` 外的接口必须提供 token：
+全局拦截器基于 `AntPathMatcher` 维护一份白名单，默认允许 `/actuator/**`、`/error`、`/auth/login`、`/auth/register` 以及为了兼容反向代理场景而保留的 `/api/auth/login`、`/api/auth/register`，其余接口必须携带 token：
 
 - `Authorization: Bearer <jwt>`
 - 或自定义头 `token: <jwt>`
