@@ -1,12 +1,6 @@
 <script setup lang="ts">
-// 首页不需要认证中间件，因为它是预渲染的公开页面
-// 在客户端检查是否已登录并重定向
-onMounted(() => {
-  const token = useCookie('token')
-  if (token.value) {
-    navigateTo('/dashboard', { replace: true })
-  }
-})
+// 首页是预渲染的公开页面，不执行客户端检查
+// 已登录用户的重定向由 middleware 处理
 </script>
 
 <template>

@@ -148,6 +148,17 @@ export const useAuth = () => {
 
       if (response.code === 1 && response.data) {
         user.value = response.data
+
+        // 缓存用户信息到 localStorage
+        if (import.meta.client) {
+          try {
+            localStorage.setItem('user_cache', JSON.stringify(response.data))
+            localStorage.setItem('user_cache_timestamp', Date.now().toString())
+          } catch {
+            // 忽略存储错误
+          }
+        }
+
         return true
       } else {
         throw new Error(response.msg || '获取用户信息失败')
@@ -280,9 +291,11 @@ export const useAuth = () => {
     }
     avatarUrl.value = null
 
-    // 清除 localStorage 中的头像时间戳以及共享的头像 URL 状态
+    // 清除 localStorage 中的所有缓存
     if (import.meta.client) {
       localStorage.removeItem('avatarTimestamp')
+      localStorage.removeItem('user_cache')
+      localStorage.removeItem('user_cache_timestamp')
     }
 
     const sharedAvatarUrl = useState<string>('sharedAvatarUrl')

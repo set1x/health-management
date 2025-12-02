@@ -1,25 +1,49 @@
 /**
- * 认证插件 - 在客户端初始化时验证 token 有效性
+ * 认证插件 - 非阻塞式加载
+ * 只在必要时才验证 token，避免首屏加载被阻塞
  */
-export default defineNuxtPlugin(async () => {
+export default defineNuxtPlugin(() => {
   const { fetchUserProfile, logout } = useAuth()
   const token = useCookie('token')
   const router = useRouter()
 
-  // 如果有 token，验证其有效性
-  if (token.value) {
-    const isValid = await fetchUserProfile(true)
+  const userState = useState<User | null>('user', () => null)
 
-    // token 无效，清除登录状态
-    if (!isValid) {
-      logout(true)
+  // 尝试从 localStorage 恢复用户信息缓存
+  if (import.meta.client && token.value && !userState.value) {
+    try {
+      const cachedUser = localStorage.getItem('user_cache')
+      const cacheTimestamp = localStorage.getItem('user_cache_timestamp')
 
-      // 如果当前不在公开路由，跳转到登录页
-      const publicRoutes = ['/login', '/register', '/']
-      const currentPath = router.currentRoute.value.path
-      if (!publicRoutes.includes(currentPath)) {
-        await navigateTo('/login')
+      if (cachedUser && cacheTimestamp) {
+        const cacheAge = Date.now() - parseInt(cacheTimestamp)
+        // 缓存有效期 5 分钟
+        if (cacheAge < 5 * 60 * 1000) {
+          const parsedUser = JSON.parse(cachedUser)
+          userState.value = parsedUser
+        }
       }
+    } catch {
+      // 忽略缓存加载错误
     }
   }
+
+  // 路由守卫：只在访问受保护页面时才验证 token
+  router.beforeEach(async (to) => {
+    const publicRoutes = ['/login', '/register', '/']
+
+    if (publicRoutes.includes(to.path)) {
+      return
+    }
+
+    // 有 token 但没有用户信息，后台验证（不阻塞导航）
+    if (token.value && !userState.value) {
+      fetchUserProfile(true).then((isValid) => {
+        if (!isValid) {
+          logout(true)
+          router.push('/login')
+        }
+      })
+    }
+  })
 })
