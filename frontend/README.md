@@ -185,7 +185,7 @@ health-management/
 pnpm install
 ```
 
-### 开发环境启动
+### 运行项目
 
 参考 `.env.example` 配置相关环境变量，接着输入如下命令：
 
@@ -195,7 +195,7 @@ pnpm dev
 
 应用将在 `http://localhost:3000` 启动
 
-> 如需联调不同后端环境，设置 `NUXT_PUBLIC_API_BASE`（或在 `.env` 中写入）即可，`nitro.devProxy` 与 `server/middleware/api-proxy.ts` 会自动复用该值
+> 开发模式自动使用非 secure cookie，无需额外配置；如需联调不同后端环境，设置 `NUXT_PUBLIC_API_BASE` 即可
 
 ### 构建生产版本
 

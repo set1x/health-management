@@ -44,7 +44,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: apiBaseUrl
+      apiBase: apiBaseUrl,
+      INSECURE_COOKIE: process.env.NUXT_PUBLIC_INSECURE_COOKIE || 'false'
     }
   },
 

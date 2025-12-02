@@ -7,28 +7,28 @@ export default defineNuxtRouteMiddleware((to) => {
 
   const token = useCookie('token')
   const userID = useCookie('userID')
-  const isAuthenticated = !!(token.value && userID.value)
+
+  const isAuthenticated = computed(() => !!(token.value && userID.value))
   const publicRoutes = ['/login', '/register', '/']
 
   // 如果是公开路由且未登录，直接放行
-  if (publicRoutes.includes(to.path) && !isAuthenticated) {
+  if (publicRoutes.includes(to.path) && !isAuthenticated.value) {
     return
   }
 
-  // 已登录用户访问公开路由（除了首页），重定向到 dashboard
-  if (publicRoutes.includes(to.path) && to.path !== '/' && isAuthenticated) {
+  // 已登录用户重定向到 dashboard
+  if (publicRoutes.includes(to.path) && to.path !== '/' && isAuthenticated.value) {
     return navigateTo('/dashboard', { replace: true })
   }
 
   if (to.path === '/') {
-    if (isAuthenticated) {
+    if (isAuthenticated.value) {
       return navigateTo('/dashboard', { replace: true })
     }
     return
   }
 
-  // 访问受保护页面但未登录，跳转到登录页
-  if (!isAuthenticated) {
+  if (!isAuthenticated.value) {
     return navigateTo('/login', { replace: true })
   }
 

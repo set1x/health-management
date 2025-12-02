@@ -59,7 +59,11 @@ const resetForm = () => {
 }
 
 async function onLoginSubmit(event: FormSubmitEvent<LoginSchema>) {
-  if (await login(event.data)) await navigateTo('/dashboard')
+  const success = await login(event.data)
+  if (success) {
+    await nextTick()
+    await navigateTo('/dashboard', { replace: true })
+  }
 }
 
 async function onRegisterSubmit(event: FormSubmitEvent<RegisterSchema>) {

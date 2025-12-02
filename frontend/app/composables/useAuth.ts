@@ -3,12 +3,15 @@
  */
 
 export const useAuth = () => {
+  const isInsecure = useRuntimeConfig().public.INSECURE_COOKIE === 'true'
+  const cookieSecure = import.meta.env.PROD && !isInsecure
+
   const user = useState<User | null>('user', () => null)
   const token = useCookie<string | null>('token', {
     maxAge: 60 * 60 * 24 * 7, // 7 天
     path: '/',
     sameSite: 'lax',
-    secure: import.meta.env.PROD,
+    secure: cookieSecure,
     default: () => null
   })
 
@@ -16,7 +19,7 @@ export const useAuth = () => {
     maxAge: 60 * 60 * 24 * 7,
     path: '/',
     sameSite: 'lax',
-    secure: import.meta.env.PROD,
+    secure: cookieSecure,
     default: () => null
   })
 
