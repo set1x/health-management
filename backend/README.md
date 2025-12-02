@@ -24,7 +24,7 @@
 - **CommonMark 0.20.0** - Markdown 解析器
 - **Spring WebFlux** - SSE 流式响应支持
 - **OkHttp 4.12.0** - 联网搜索 HTTP 客户端
-- **Spring AI Function Calling** - `HealthDataFunctions`、`WebSearchFunction` 用于模型自动操作数据库和联网搜索
+- **Spring AI Function Calling** - `BodyFunctions`、`SleepFunctions`、`DietFunctions`、`ExerciseFunctions`、`WebSearchFunction` 用于模型自动操作数据库和联网搜索
 - **动态系统提示** - `AiPromptTemplate` 每次请求实时注入服务器日期与时间，指导模型统一使用服务端日期
 - **FunctionResultCache** - 轻量缓存函数结果，避免模型在同一轮对话中重复触发查询
 
@@ -88,7 +88,11 @@ backend/
 │   │   │   │   ├── AiPromptTemplate.java
 │   │   │   │   └── WebConfig.java
 │   │   │   ├── function/                     # Spring AI Function 定义
-│   │   │   │   ├── HealthDataFunctions.java
+│   │   │   │   ├── BaseHealthFunctionModule.java
+│   │   │   │   ├── BodyFunctions.java
+│   │   │   │   ├── DietFunctions.java
+│   │   │   │   ├── ExerciseFunctions.java
+│   │   │   │   ├── SleepFunctions.java
 │   │   │   │   └── WebSearchFunction.java
 │   │   │   └── utils/                        # 工具类
 │   │   │       ├── FunctionResultCache.java  # AI 函数结果缓存
@@ -118,7 +122,7 @@ backend/
 
 - Java 17+
 - Gradle 8.12+
-- MySQL 8.0+
+- MySQL 9.0+
 
 ### 环境变量配置
 
@@ -129,16 +133,6 @@ backend/
 ```bash
 cd backend
 export $(grep -v '^#' .env | xargs)
-```
-
-### 数据库初始化（默认已初始化）
-
-```bash
-# 方式 1：手动导入
-mysql -u root -p < init.sql
-
-# 方式 2：使用 Docker Compose
-docker-compose up -d mysql
 ```
 
 ### 开发环境启动
@@ -165,7 +159,7 @@ docker-compose up -d mysql
 >
 > - `test` Profile 会自动加载 `src/test/resources/application-test.properties`，使用 **H2** 内存数据库与 `schema.sql`、`data.sql`，CI 与本地无需依赖外部 MySQL
 > - MyBatis 切片测试（`@MybatisTest`）直接校验 Mapper SQL，Service 与拦截器/Controller 则通过 Mockito、`@WebMvcTest` 做行为验证
-> - AI、外呼等远程能力在测试 Profile 下默认关闭，确保无 GUI、无外网环境也能稳定运行
+> - AI、外呼等远程能力在测试 Profile 下默认关闭
 
 ### 代码格式化
 
@@ -187,71 +181,21 @@ docker-compose up -d mysql
 java -jar build/libs/health-management-backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
 ```
 
-> 生产环境只需把 `build/libs/` 下的 jar 文件与部署所需的 `Dockerfile`、`docker-compose.yml`、`.env` 拷贝到服务器即可
+> 生产环境只需把 `./build/libs/` 下的 jar 文件与部署所需的 `Dockerfile`、`docker-compose.yml`、`.env` 拷贝到服务器即可
 
 ## Docker 部署
 
 ### 单独构建后端镜像
 
-> 先在本地执行 `./gradlew clean bootJar`，确保 `build/libs/health-management-backend-*.jar` 已生成，再继续以下步骤
+> 先在本地执行 `./gradlew clean bootJar`，确保 `./build/libs/health-management-backend-*.jar` 已生成，再继续以下步骤
 
 ```bash
 # 构建镜像
 docker build -t health-management-backend:latest .
 
-# 运行容器（需要先启动 MySQL）
-docker run -d \
-  -p 8080:8080 \
-  -e SPRING_PROFILES_ACTIVE=prod \
-  -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/health_management_db?useSSL=false&allowPublicKeyRetrieval=true \
-  -e SPRING_DATASOURCE_USERNAME=root \
-  -e SPRING_DATASOURCE_PASSWORD=your_password \
-  -e DEEPSEEK_API_KEY=your_api_key \
-  -e JWT_SIGN_KEY=your_jwt_key \
-  -e JWT_EXPIRE_TIME=43200000 \
-  -e AVATAR_UPLOAD_DIR=/app/avatars \
-  --name health-backend \
-  health-management-backend:latest
-```
-
-镜像更新流程：
-
-1. 本地重新执行 `./gradlew clean bootJar`
-2. 将新的 `build/libs/*.jar`、`Dockerfile`、`.env`、`docker-compose.yml` 同步到服务器
-3. 在服务器 `docker build -t health-management-backend:latest .`
-4. `docker stop health-management-backend && docker rm health-management-backend`
-5. 重新 `docker run ...` 或由 Compose 管理
-
-### 使用 Docker Compose
-
-配置相关环境变量
-
-```bash
-# 第一次部署 / 同步新 JAR 后
+# 使用 docker compose
 docker compose up -d --build
-
-# 查看后端日志
-docker compose logs -f backend
-
-# 停止服务
-docker compose down
 ```
-
-> `.env` 中需提供所有敏感环境变量（数据库密码、JWT、AI Key 等），并与 `docker-compose.yml` 保持一致；服务器只保留 JAR、Dockerfile、Compose、`.env` 即可
-
-### Docker Compose 服务说明
-
-- **mysql**: MySQL 9.0 数据库
-  - 端口：`3306`
-  - 自动执行 `init.sql` 初始化脚本
-  - 数据持久化到 `mysql_data` 卷
-  - 健康检查：每 10 秒检查一次
-
-- **backend**: Spring Boot 应用
-  - 端口：`8080`
-  - 依赖 MySQL 健康检查通过后启动
-  - 头像存储持久化到 `avatar_data` 卷
-  - 健康检查：通过 `/actuator/health` 端点
 
 ## 架构特性
 
@@ -371,7 +315,7 @@ Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 更多接口详情见项目根目录 `docs/api/overview.md` 及各模块 API 文档。
 
-## 环境变量说明（核心）
+## 环境变量说明
 
 - `SPRING_DATASOURCE_URL`：数据库连接串，默认 `jdbc:mysql://localhost:3306/health_management_db`
 - `SPRING_DATASOURCE_USERNAME`：数据库用户名，默认 `root`
@@ -382,10 +326,3 @@ Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - `WEB_SEARCH_ENABLED` / `web.search.enabled`：是否允许模型调用联网搜索，默认 `true`
 - `SERVER_PORT`：服务端口，默认 `8080`
 - `AVATAR_UPLOAD_DIR`：头像上传目录，容器内默认 `/app/avatars`
-
-## 常见问题（FAQ）
-
-- Docker 拉取 MySQL 失败：如 `mysql:9.0` 不存在，建议将 `docker-compose.yml` 中镜像改为 `mysql:8.4` 或 `mysql:8.0`
-- 返回未登录：确认前端按文档将 Token 放在 `Authorization: Bearer <JWT>` 或 `token` 头、或 Cookie `token`
-- 启动报缺少密钥：确保设置了 `JWT_SIGN_KEY`，且与发放 Token 使用的密钥一致
-- AI 请求超时：检查 `DEEPSEEK_API_KEY`，并确认网络可访问 DeepSeek API（api.deepseek.com）

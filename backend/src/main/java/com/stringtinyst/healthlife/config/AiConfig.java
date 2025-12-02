@@ -53,15 +53,24 @@ public class AiConfig {
         new String[] {
           "queryBodyMetrics",
           "addBodyMetric",
+          "getBodyMetricDetail",
+          "updateBodyMetric",
+          "deleteBodyMetric",
           "querySleepRecords",
           "addSleepRecord",
           "updateSleepRecord",
+          "getSleepRecordDetail",
+          "deleteSleepRecord",
           "queryDietRecords",
           "addDietRecord",
           "updateDietRecord",
+          "getDietRecordDetail",
+          "deleteDietRecord",
           "queryExerciseRecords",
           "addExerciseRecord",
           "updateExerciseRecord",
+          "getExerciseRecordDetail",
+          "deleteExerciseRecord",
           "webSearch"
         };
 

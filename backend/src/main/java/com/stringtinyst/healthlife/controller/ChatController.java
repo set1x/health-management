@@ -25,15 +25,24 @@ public class ChatController {
   private static final String[] FUNCTION_TOOLBOX = {
     "queryBodyMetrics",
     "addBodyMetric",
+    "getBodyMetricDetail",
+    "updateBodyMetric",
+    "deleteBodyMetric",
     "querySleepRecords",
     "addSleepRecord",
     "updateSleepRecord",
+    "getSleepRecordDetail",
+    "deleteSleepRecord",
     "queryDietRecords",
     "addDietRecord",
     "updateDietRecord",
+    "getDietRecordDetail",
+    "deleteDietRecord",
     "queryExerciseRecords",
     "addExerciseRecord",
     "updateExerciseRecord",
+    "getExerciseRecordDetail",
+    "deleteExerciseRecord",
     "webSearch"
   };
 
@@ -53,6 +62,7 @@ public class ChatController {
         ChatClient.builder(chatModel)
             .defaultSystem(systemPrompt)
             .defaultAdvisors(new MessageChatMemoryAdvisor(chatMemory))
+            .defaultFunctions(FUNCTION_TOOLBOX)
             .build();
 
     return chatClient

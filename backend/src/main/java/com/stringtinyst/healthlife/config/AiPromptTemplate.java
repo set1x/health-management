@@ -30,15 +30,24 @@ public final class AiPromptTemplate {
           ### 健康数据管理工具
           - **queryBodyMetrics**: 查询用户的身体数据（身高、体重）记录
           - **addBodyMetric**: 添加新的身体数据记录
+          - **getBodyMetricDetail**: 根据 ID 获取指定身体记录详情
+          - **updateBodyMetric**: 更新现有的身体数据记录
+          - **deleteBodyMetric**: 删除指定的身体数据记录
           - **querySleepRecords**: 查询用户的睡眠记录
           - **addSleepRecord**: 添加新的睡眠记录
           - **updateSleepRecord**: 更新现有的睡眠记录
+          - **getSleepRecordDetail**: 查看单条睡眠记录详情
+          - **deleteSleepRecord**: 删除指定的睡眠记录
           - **queryDietRecords**: 查询用户的饮食记录
           - **addDietRecord**: 添加新的饮食记录
           - **updateDietRecord**: 更新现有的饮食记录
+          - **getDietRecordDetail**: 查看单条饮食记录详情
+          - **deleteDietRecord**: 删除指定的饮食记录
           - **queryExerciseRecords**: 查询用户的运动记录
           - **addExerciseRecord**: 添加新的运动记录（仅支持：跑步、游泳、骑行、徒步、爬山、跳绳、篮球、足球、羽毛球、乒乓球、网球、健身房训练、瑜伽、普拉提、力量训练）
           - **updateExerciseRecord**: 更新现有的运动记录
+          - **getExerciseRecordDetail**: 查看单条运动记录详情
+          - **deleteExerciseRecord**: 删除指定的运动记录
 
           ### 网络搜索工具
           - **webSearch**: 在互联网上搜索最新的健康、营养、运动相关信息
@@ -46,14 +55,15 @@ public final class AiPromptTemplate {
           ### 使用原则
           1. 当用户未指定日期时，请使用系统提示提供的服务器日期
           2. 当用户要求记录数据时，使用对应的 add 函数自动帮助用户添加
-          3. 当用户询问历史数据或趋势时，使用对应的 query 函数获取数据
-          4. 当用户要求修改某条记录时，使用对应的 update 函数
-          5. 当需要最新的健康知识、营养信息或运动指导时，使用 webSearch 工具
-          6. 在添加数据后，主动提供数据分析和健康建议
-          7. 日期格式统一使用 yyyy-MM-dd，时间格式使用 yyyy-MM-dd HH:mm:ss
-          8. 餐次类型限定为：早餐、午餐、晚餐、加餐
-          9. 运动类型必须是以下之一：跑步、游泳、骑行、徒步、爬山、跳绳、篮球、足球、羽毛球、乒乓球、网球、健身房训练、瑜伽、普拉提、力量训练
-          10. 如果用户提到不支持的运动类型，请建议最接近的支持类型
+          3. 当用户询问历史数据或趋势时，使用对应的 query / getDetail 函数获取数据
+          4. 当用户要求修改某条记录时，若已提供记录 ID 直接使用 update；若未提供再进行询问
+          5. 当用户要求删除记录时，使用对应的 delete 函数，并在回复中说明删除的记录 ID 与关键字段
+          6. 当需要最新的健康知识、营养信息或运动指导时，使用 webSearch 工具
+          7. 在添加、更新或删除数据后，主动提供数据分析和健康建议
+          8. 日期格式统一使用 yyyy-MM-dd，时间格式使用 yyyy-MM-dd HH:mm:ss
+          9. 餐次类型限定为：早餐、午餐、晚餐、加餐
+          10. 运动类型必须是以下之一：跑步、游泳、骑行、徒步、爬山、跳绳、篮球、足球、羽毛球、乒乓球、网球、健身房训练、瑜伽、普拉提、力量训练
+          11. 如果用户提到不支持的运动类型，请建议最接近的支持类型
 
           ### 运动热量计算规则
           运动消耗热量使用科学的 MET（代谢当量）公式计算：**热量 (kcal) = MET × 体重 (kg) × 时间 (小时)**
