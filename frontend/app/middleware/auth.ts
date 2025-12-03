@@ -2,9 +2,6 @@ export default defineNuxtRouteMiddleware((to) => {
   // 仅在客户端执行认证检查
   if (import.meta.server) return
 
-  const config = useRuntimeConfig().public
-  if (config.SKIP_AUTH === 'true') return
-
   const token = useCookie('token')
   const userID = useCookie('userID')
 

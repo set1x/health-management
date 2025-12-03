@@ -167,8 +167,8 @@ const loadHealthStats = async () => {
       const res = responses[index]
       if (res) healthStats.totalRecords[endpoint.key] = res.code === 1 ? res.data.total || 0 : 0
     })
-  } catch (error) {
-    console.error('Failed to load health stats:', error)
+  } catch {
+    // 忽略错误处理
   }
 }
 
