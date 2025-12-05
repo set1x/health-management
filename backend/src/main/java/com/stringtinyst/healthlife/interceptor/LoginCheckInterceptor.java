@@ -20,14 +20,15 @@ public class LoginCheckInterceptor implements HandlerInterceptor {
 
   private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
   private static final String[] AUTH_WHITELIST = {
-    "/actuator/**",
-    "/error",
-    "/auth/login",
-    "/auth/register",
+    "/actuator/health",
+    "/actuator/info",
     "/api/auth/login",
+    "/api/auth/password/reset",
     "/api/auth/register",
+    "/auth/login",
     "/auth/password/reset",
-    "/api/auth/password/reset"
+    "/auth/register",
+    "/error"
   };
 
   @Autowired private JwtUtils jwtUtils;

@@ -122,6 +122,143 @@ describe('useAuth', () => {
     })
   })
 
+  describe('resetPassword', () => {
+    it('重置密码成功时应该返回 true', async () => {
+      mockFetch.mockResolvedValueOnce({
+        code: 1,
+        msg: '密码重置成功'
+      })
+
+      const { resetPassword } = useAuth()
+
+      const result = await resetPassword({
+        nickname: 'testuser',
+        email: 'test@example.com',
+        newPassword: 'newpass123',
+        confirmPassword: 'newpass123'
+      })
+
+      expect(result).toBe(true)
+      expect(mockToastAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: '密码已更新',
+          color: 'success'
+        })
+      )
+    })
+
+    it('重置密码失败时应该返回 false', async () => {
+      mockFetch.mockResolvedValueOnce({
+        code: 0,
+        msg: '邮箱不存在'
+      })
+
+      const { resetPassword } = useAuth()
+
+      const result = await resetPassword({
+        nickname: 'testuser',
+        email: 'notexist@example.com',
+        newPassword: 'newpass123',
+        confirmPassword: 'newpass123'
+      })
+
+      expect(result).toBe(false)
+      expect(mockToastAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: '重置密码失败',
+          color: 'error'
+        })
+      )
+    })
+  })
+
+  describe('updateProfile', () => {
+    it('更新成功时应该返回 true', async () => {
+      mockFetch.mockResolvedValueOnce({
+        code: 1,
+        msg: '更新成功'
+      })
+
+      const { updateProfile } = useAuth()
+
+      const result = await updateProfile({ nickname: '新昵称' })
+
+      expect(result).toBe(true)
+      expect(mockToastAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: '更新成功',
+          color: 'success'
+        })
+      )
+    })
+
+    it('更新失败时应该返回 false', async () => {
+      mockFetch.mockResolvedValueOnce({
+        code: 0,
+        msg: '更新失败'
+      })
+
+      const { updateProfile } = useAuth()
+
+      const result = await updateProfile({ nickname: '新昵称' })
+
+      expect(result).toBe(false)
+      expect(mockToastAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: '更新失败',
+          color: 'error'
+        })
+      )
+    })
+  })
+
+  describe('fetchUserProfile', () => {
+    it('获取用户信息成功', async () => {
+      const mockUserData = {
+        id: '123',
+        email: 'test@example.com',
+        nickname: 'testuser'
+      }
+
+      mockFetch.mockResolvedValueOnce({
+        code: 1,
+        data: mockUserData
+      })
+
+      const { fetchUserProfile, user } = useAuth()
+
+      const result = await fetchUserProfile()
+
+      expect(result).toBe(true)
+      expect(user.value).toEqual(mockUserData)
+    })
+
+    it('401 错误时应该退出登录', async () => {
+      mockFetch.mockRejectedValueOnce({
+        response: { status: 401 }
+      })
+
+      const { fetchUserProfile, isLoggedIn } = useAuth()
+
+      const result = await fetchUserProfile()
+
+      expect(result).toBe(false)
+      expect(isLoggedIn.value).toBe(false)
+    })
+
+    it('静默模式下 401 不应显示提示', async () => {
+      mockFetch.mockRejectedValueOnce({
+        response: { status: 401 }
+      })
+
+      const { fetchUserProfile } = useAuth()
+
+      await fetchUserProfile(true)
+
+      expect(mockToastAdd).not.toHaveBeenCalled()
+    })
+  })
+
   describe('logout', () => {
     it('退出登录时应该清除状态', () => {
       const { logout, user, isLoggedIn } = useAuth()

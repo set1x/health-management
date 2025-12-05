@@ -225,20 +225,20 @@ pnpm typecheck
 ### 单元测试
 
 ```bash
-# 运行测试（监听模式）
+# 运行测试
 pnpm test
 
-# 运行测试（单次执行）
-pnpm test:run
+# 运行测试（监听模式）
+pnpm test:unit
 
-# 运行测试并生成覆盖率报告
+# 生成覆盖率报告
 pnpm test:coverage
 ```
 
 测试文件位于 `app/tests/` 目录，覆盖：
 
 - **工具函数**: `dateUtils.spec.ts`, `metricUtils.spec.ts`, `sse.spec.ts`
-- **Composables**: `composables/useAuth.spec.ts`, `composables/useECharts.spec.ts`
+- **Composables**: `composables/useAuth.spec.ts`, `composables/useECharts.spec.ts`, `composables/useAvatar.spec.ts`
 - **组件**: `components/*.spec.ts` (DatePicker, YearMonthSelect, QuickBodyDataDialog 等)
 
 覆盖率报告生成在 `coverage/` 目录
@@ -251,12 +251,12 @@ pnpm test:coverage
 # 运行所有 E2E 测试
 pnpm test:e2e
 
-# 以 UI 模式运行（可视化调试）
+# UI 模式运行
 pnpm test:e2e:ui
 
-# 其他选项（通过 -- 传递参数）
-pnpm test:e2e -- --headed      # 显示浏览器
-pnpm test:e2e -- --debug       # 调试模式
+# 显示浏览器或调试（通过 -- 传递参数）
+pnpm test:e2e -- --headed
+pnpm test:e2e -- --debug
 ```
 
 测试覆盖：
@@ -264,19 +264,20 @@ pnpm test:e2e -- --debug       # 调试模式
 - **首页**: 页面元素、导航功能
 - **登录/注册页**: 表单显示、输入验证、页面切换
 
-### Postman 测试
+### API 测试
 
 `./postman/` 目录提供了一套与页面调用保持一致的 Postman 集合，并预置：
 
 - `avatar.png`：供头像上传接口使用的占位图片（路径写在环境变量 `avatarPath` 内）
 - `wrongPassword`、`invalidWeight`、`invalidBedTime` 等变量：用于错误数据用例，覆盖常见的输入非法场景
 
-运行 `pnpm api:test`，命令会自动调用 `postman/api.postman_collection.json` 与 `postman/local.postman_environment.json`
-
-若需自定义参数，可追加 Newman 原生选项，例如：
-
 ```bash
-pnpm api:test --reporters cli,html --reporter-html-export ./newman-report.html
-```
+# 运行 API 测试
+pnpm test:api
 
-环境变量可在 JSON 文件内修改，或通过 `pnpm api:test --env-var baseUrl=https://api.example.com` 临时覆盖；若要验证更多错误数据，可新增变量并在集合里引用即可
+# 生成 HTML 报告
+pnpm test:api -- --reporters cli,html --reporter-html-export ./newman-report.html
+
+# 临时覆盖环境变量
+pnpm test:api -- --env-var baseUrl=https://api.example.com
+```

@@ -9,7 +9,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** Sleep record entity */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

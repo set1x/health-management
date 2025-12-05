@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { CalendarDate } from '@internationalized/date'
 import {
   getTodayDateValue,
@@ -96,6 +96,87 @@ describe('dateUtils', () => {
 
     it('应该处理无效时间', () => {
       expect(calculateMinutesBetween('invalid', '2025-01-15T06:00:00')).toBe(0)
+      expect(calculateMinutesBetween('2025-01-15T06:00:00', 'invalid')).toBe(0)
+    })
+
+    it('结束时间早于开始时间应返回 0', () => {
+      const start = '2025-01-16T06:00:00'
+      const end = '2025-01-15T22:00:00'
+      expect(calculateMinutesBetween(start, end)).toBe(0)
+    })
+  })
+
+  describe('getTodayDateValue', () => {
+    it('应该返回今日的 DateValue', () => {
+      const today = getTodayDateValue()
+      expect(today).toBeDefined()
+      expect(today.year).toBeGreaterThan(2020)
+    })
+  })
+
+  describe('calendarDateTimeToISOString', () => {
+    it('应该将 CalendarDateTime 转换为 ISO 字符串', async () => {
+      const { CalendarDateTime } = await import('@internationalized/date')
+      const dt = new CalendarDateTime(2025, 1, 15, 14, 30, 0)
+      const result = calendarDateTimeToISOString(dt)
+      expect(result).toBe('2025-01-15T14:30:00')
+    })
+
+    it('处理 null 应返回 null', () => {
+      expect(calendarDateTimeToISOString(null)).toBeNull()
+    })
+
+    it('应该正确补零', async () => {
+      const { CalendarDateTime } = await import('@internationalized/date')
+      const dt = new CalendarDateTime(2025, 3, 5, 9, 5, 3)
+      const result = calendarDateTimeToISOString(dt)
+      expect(result).toBe('2025-03-05T09:05:03')
+    })
+  })
+
+  describe('parseISOToCalendarDateTime', () => {
+    it('应该解析 ISO 字符串为 CalendarDateTime', () => {
+      const result = parseISOToCalendarDateTime('2025-01-15T14:30:00')
+      expect(result).toBeDefined()
+      expect(result?.year).toBe(2025)
+      expect(result?.month).toBe(1)
+      expect(result?.day).toBe(15)
+      expect(result?.hour).toBe(14)
+      expect(result?.minute).toBe(30)
+      expect(result?.second).toBe(0)
+    })
+
+    it('处理 null 或 undefined 应返回 null', () => {
+      expect(parseISOToCalendarDateTime(null)).toBeNull()
+      expect(parseISOToCalendarDateTime(undefined)).toBeNull()
+    })
+
+    it('处理无效格式应返回 null', () => {
+      expect(parseISOToCalendarDateTime('invalid')).toBeNull()
+      expect(parseISOToCalendarDateTime('2025-01-15')).toBeNull()
+    })
+
+    it('处理构造异常时应返回 null', async () => {
+      // Mock CalendarDateTime 构造函数抛出异常
+      const originalModule = await import('@internationalized/date')
+      vi.doMock('@internationalized/date', () => ({
+        ...originalModule,
+        CalendarDateTime: vi.fn(() => {
+          throw new Error('Constructor error')
+        })
+      }))
+
+      // 重新导入函数以使用 mock
+      vi.resetModules()
+      const { parseISOToCalendarDateTime: mockedParse } = await import('~/utils/dateUtils')
+
+      // 测试异常处理
+      const result = mockedParse('2025-01-15T14:30:00')
+      expect(result).toBeNull()
+
+      // 恢复 mock
+      vi.doUnmock('@internationalized/date')
+      vi.resetModules()
     })
   })
 

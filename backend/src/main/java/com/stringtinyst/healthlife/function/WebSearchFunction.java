@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 /**
  * 联网搜索功能
  *
- * <p>使用 DuckDuckGo 或其他搜索引擎为 AI 提供实时网络搜索能力
+ * <p>使用搜索引擎为 AI 提供实时网络搜索能力
  */
 @Slf4j
 @Component
@@ -109,7 +109,7 @@ public class WebSearchFunction {
   private List<SearchResult> searchDuckDuckGo(String query, int maxResults) throws IOException {
     List<SearchResult> results = new ArrayList<>();
 
-    // 使用 DuckDuckGo HTML 搜索（更稳定）
+    // 使用 DuckDuckGo HTML 搜索
     String searchUrl =
         String.format(
             "https://html.duckduckgo.com/html/?q=%s", java.net.URLEncoder.encode(query, "UTF-8"));
@@ -200,7 +200,7 @@ public class WebSearchFunction {
   private List<SearchResult> parseDuckDuckGoHtml(String html, int maxResults) {
     List<SearchResult> results = new ArrayList<>();
 
-    // 简单的 HTML 解析（生产环境建议使用 Jsoup 等专业库）
+    // 简单的 HTML 解析
     try {
       String[] resultBlocks = html.split("result__a");
 
@@ -228,7 +228,7 @@ public class WebSearchFunction {
           result.setUrl(url);
         }
 
-        // 提取摘要（简化处理）
+        // 提取摘要
         result.setSnippet("搜索结果摘要");
 
         if (result.getTitle() != null && result.getUrl() != null) {

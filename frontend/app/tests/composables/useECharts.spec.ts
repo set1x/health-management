@@ -26,6 +26,17 @@ describe('useECharts', () => {
     })
   })
 
+  describe('initChart', () => {
+    it('应该初始化图表实例', () => {
+      const mockContainer = document.createElement('div')
+      const { initChart } = useECharts()
+
+      const chart = initChart(mockContainer)
+
+      expect(chart).toBeDefined()
+    })
+  })
+
   describe('disposeChart', () => {
     it('应该销毁图表实例', () => {
       const mockDispose = vi.fn()

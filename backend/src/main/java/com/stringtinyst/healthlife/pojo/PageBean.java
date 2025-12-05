@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PageBean {
-  private Long total; // 总记录数
-  private List rows; // 数据列表
+  private Long total;
+  private List rows;
 }

@@ -63,12 +63,12 @@ git push origin feat/feature-name
 
 ```bash
 cd frontend
-pnpm lint        # 代码检查并修复
-pnpm format      # 代码格式化
-pnpm typecheck   # 类型检查
-pnpm test:run    # 单元测试
-pnpm test:e2e    # E2E 测试
-pnpm api:test    # API 回归测试
+pnpm lint       # 代码检查并修复
+pnpm format     # 代码格式化
+pnpm typecheck  # 类型检查
+pnpm test:unit  # 单元测试
+pnpm test:e2e   # E2E 测试
+pnpm test:api   # API 回归测试
 ```
 
 ### 后端

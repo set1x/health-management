@@ -43,7 +43,6 @@ public class DietController {
     return Result.success(diet.getDietItemID());
   }
 
-  /** Update a diet item */
   @PutMapping("/{dietItemID}")
   public Result updateDiet(@PathVariable int dietItemID, @Valid @RequestBody Diet diet) {
     log.info("Updating diet item with ID: {}", dietItemID);

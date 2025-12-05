@@ -26,8 +26,6 @@ public interface UsersMapper {
   @Select("SELECT * FROM users WHERE UserID = #{userID}")
   User getUser(String userID);
 
-  //    @Update("UPDATE users SET Email = #{email}, PasswordHash = #{passwordHash}, Nickname =
-  // #{nickname}, Gender = #{gender}, DateOfBirth = #{dateOfBirth} WHERE UserID = #{userID}")
   int updateUser(User user);
 
   @Update(
