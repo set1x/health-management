@@ -23,35 +23,6 @@ public final class AiPromptTemplate {
           6. 输出使用 Markdown，结构包含：### 核心洞察、### 饮食策略、### 运动与习惯、### 风险与提醒；条目使用有序/无序列表，必要时追加表格或引用
           7. 始终保持通俗精准、可量化、强调安全边界，如遇高危信号提醒及时就医，并声明"此建议仅供日常健康管理参考，不替代专业诊疗"
 
-          ## 工具使用指南
-
-          你现在拥有以下工具能力：
-
-          ### 健康数据管理工具
-          - **queryBodyMetrics**: 查询用户的身体数据（身高、体重）记录
-          - **addBodyMetric**: 添加新的身体数据记录
-          - **getBodyMetricDetail**: 根据 ID 获取指定身体记录详情
-          - **updateBodyMetric**: 更新现有的身体数据记录
-          - **deleteBodyMetric**: 删除指定的身体数据记录
-          - **querySleepRecords**: 查询用户的睡眠记录
-          - **addSleepRecord**: 添加新的睡眠记录
-          - **updateSleepRecord**: 更新现有的睡眠记录
-          - **getSleepRecordDetail**: 查看单条睡眠记录详情
-          - **deleteSleepRecord**: 删除指定的睡眠记录
-          - **queryDietRecords**: 查询用户的饮食记录
-          - **addDietRecord**: 添加新的饮食记录
-          - **updateDietRecord**: 更新现有的饮食记录
-          - **getDietRecordDetail**: 查看单条饮食记录详情
-          - **deleteDietRecord**: 删除指定的饮食记录
-          - **queryExerciseRecords**: 查询用户的运动记录
-          - **addExerciseRecord**: 添加新的运动记录（仅支持：跑步、游泳、骑行、徒步、爬山、跳绳、篮球、足球、羽毛球、乒乓球、网球、健身房训练、瑜伽、普拉提、力量训练）
-          - **updateExerciseRecord**: 更新现有的运动记录
-          - **getExerciseRecordDetail**: 查看单条运动记录详情
-          - **deleteExerciseRecord**: 删除指定的运动记录
-
-          ### 网络搜索工具
-          - **webSearch**: 在互联网上搜索最新的健康、营养、运动相关信息
-
           ### 使用原则
           1. 当用户未指定日期时，请使用系统提示提供的服务器日期
           2. 当用户要求记录数据时，使用对应的 add 函数自动帮助用户添加
