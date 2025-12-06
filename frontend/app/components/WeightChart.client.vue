@@ -8,6 +8,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<{ 'update:timePeriod': [value: string] }>()
 
 const { echarts, initChart, disposeChart } = useECharts()
+const isInitializing = ref(true)
 
 const chartRef = ref<HTMLDivElement>()
 let chart: ReturnType<typeof initChart> | null = null
@@ -26,7 +27,7 @@ const timePeriodButtons = [
 ]
 
 const averageWeight = computed(() => {
-  if (props.data.length === 0) return 0
+  if (props.data.length === 0) return '0.0'
   const total = props.data.reduce((sum, item) => sum + item.weight, 0)
   return (total / props.data.length).toFixed(1)
 })
@@ -43,6 +44,7 @@ const init = () => {
   releaseChart()
   chart = initChart(chartRef.value)
   updateChart()
+  isInitializing.value = false
 }
 
 const updateChart = () => {
@@ -129,13 +131,37 @@ const updateChart = () => {
 }
 
 let resizeObserver: ResizeObserver | null = null
+let rafId: number | null = null
+let isResizing = false
 
 const handleResize = () => {
-  chart?.resize()
+  if (isResizing) return
+
+  isResizing = true
+  if (rafId) {
+    cancelAnimationFrame(rafId)
+  }
+
+  rafId = requestAnimationFrame(() => {
+    chart?.resize()
+    isResizing = false
+  })
 }
 
 onMounted(() => {
-  init()
+  // 使用 requestIdleCallback 延迟初始化，避免阻塞主线程
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(
+      () => {
+        init()
+      },
+      { timeout: 500 }
+    )
+  } else {
+    // 降级方案：延迟初始化
+    setTimeout(init, 50)
+  }
+
   window.addEventListener('resize', handleResize)
 
   // 监听容器大小变化
@@ -147,6 +173,10 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
+  if (rafId) {
+    cancelAnimationFrame(rafId)
+    rafId = null
+  }
   if (resizeObserver) {
     resizeObserver.disconnect()
     resizeObserver = null
@@ -194,6 +224,16 @@ watch(
         </div>
       </div>
     </template>
-    <div ref="chartRef" class="h-[350px] w-full" />
+    <div class="relative h-[350px] w-full">
+      <!-- 骨架屏 -->
+      <div
+        v-if="isInitializing || !data.length"
+        class="absolute inset-0 flex items-center justify-center"
+      >
+        <USkeleton class="h-full w-full" />
+      </div>
+      <!-- 图表容器 - 固定高度避免 Layout Shift -->
+      <div ref="chartRef" class="h-full w-full" />
+    </div>
   </UCard>
 </template>

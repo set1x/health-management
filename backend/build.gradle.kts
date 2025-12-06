@@ -50,6 +50,9 @@ dependencies {
     // PageHelper
     implementation("com.github.pagehelper:pagehelper-spring-boot-starter:1.4.7")
 
+    // CSV
+    implementation("org.apache.commons:commons-csv:1.10.0")
+
     // JWT
     implementation("io.jsonwebtoken:jjwt:0.9.1")
     implementation("javax.xml.bind:jaxb-api:2.3.1")
@@ -87,4 +90,8 @@ tasks.withType<Test> {
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveFileName.set("${project.name}-${project.version}.jar")
+}
+
+tasks.withType<JavaCompile> {
+    options.compilerArgs.addAll(listOf("-Xlint:unchecked", "-Xlint:deprecation"))
 }

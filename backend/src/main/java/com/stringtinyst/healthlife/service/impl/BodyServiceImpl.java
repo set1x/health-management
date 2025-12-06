@@ -26,13 +26,13 @@ public class BodyServiceImpl implements BodyService {
   }
 
   @Override
-  public PageBean page(
+  public PageBean<Body> page(
       Integer page, Integer pageSize, String userID, LocalDate begin, LocalDate end) {
     PageHelper.startPage(page, pageSize);
 
     List<Body> bodyList = bodyMapper.list(userID, begin, end);
     Page<Body> p = (Page<Body>) bodyList;
-    return new PageBean(p.getTotal(), p.getResult());
+    return new PageBean<>(p.getTotal(), p.getResult());
   }
 
   @Override

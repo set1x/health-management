@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PageBean {
+public class PageBean<T> {
   private Long total;
-  private List rows;
+  private List<T> rows;
 }

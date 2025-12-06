@@ -32,6 +32,16 @@
   }
   ```
 
+## `GET /diet-items/export`
+
+导出分页范围内的饮食记录为 CSV
+
+- **查询参数**：同 `GET /diet-items`
+- **成功响应**：
+  - Content-Type: `text/csv`
+  - Content-Disposition: `attachment; filename="diet-items.csv"`
+  - Body: CSV 格式文本
+
 ## `GET /diet-items/{dietItemID}`
 
 - **成功响应**：返回 `Diet` 对象

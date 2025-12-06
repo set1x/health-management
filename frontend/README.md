@@ -34,6 +34,13 @@
 - **Marked** - Markdown 解析器
 - **DOMPurify** - XSS 防护
 
+### SSE 连接管理
+
+- **智能重连机制** - 指数退避算法
+- **连接状态监控** - 实时显示连接状态和重试进度
+- **网络容错能力** - 自动处理网络中断，最多重试 5 次
+- **对话历史保护** - 重连时自动恢复上下文
+
 ### 开发工具
 
 - **ESLint** - 代码质量检查
@@ -76,9 +83,9 @@
 
 ### 流式通信
 
-- `utils/sse.ts` 统一管理基于 Fetch 与 EventSource 的 SSE 订阅
-- 异步队列缓冲分片，确保 AI 消息严格按顺序渲染
-- 连接异常、超时、用户中止时主动结束流并抛出友好错误
+- `utils/sse.ts` 使用 async generator 处理后端 JSON 流
+- 直接解析连续的 JSON 对象流（`{"content":"a"}{"content":"b"}`）
+- 支持分片传输、不完整 JSON 缓冲和错误处理
 
 ### 统一 API 代理
 
@@ -118,7 +125,9 @@ health-management/
 │   ├── composables/
 │   │   ├── useAuth.ts                # 认证状态管理
 │   │   ├── useAvatar.ts              # 头像状态检测与 URL 缓存
-│   │   └── useECharts.ts             # ECharts 配置
+│   │   ├── useECharts.ts             # ECharts 配置
+│   │   ├── useExport.ts              # CSV 导出功能
+│   │   └── useSSEConnection.ts       # SSE 连接管理
 │   ├── layouts/
 │   │   ├── blank.vue                 # 登录页
 │   │   └── default.vue               # 导航栏
@@ -238,7 +247,7 @@ pnpm test:coverage
 测试文件位于 `app/tests/` 目录，覆盖：
 
 - **工具函数**: `dateUtils.spec.ts`, `metricUtils.spec.ts`, `sse.spec.ts`
-- **Composables**: `composables/useAuth.spec.ts`, `composables/useECharts.spec.ts`, `composables/useAvatar.spec.ts`
+- **Composables**: `composables/useAuth.spec.ts`, `composables/useECharts.spec.ts`, `composables/useAvatar.spec.ts`, `composables/useExport.spec.ts`
 - **组件**: `components/*.spec.ts` (DatePicker, YearMonthSelect, QuickBodyDataDialog 等)
 
 覆盖率报告生成在 `coverage/` 目录

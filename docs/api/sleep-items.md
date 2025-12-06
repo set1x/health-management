@@ -30,6 +30,16 @@
   }
   ```
 
+## `GET /sleep-items/export`
+
+导出分页范围内的睡眠记录为 CSV
+
+- **查询参数**：同 `GET /sleep-items`
+- **成功响应**：
+  - Content-Type: `text/csv`
+  - Content-Disposition: `attachment; filename="sleep-items.csv"`
+  - Body: CSV 格式文本
+
 ## `GET /sleep-items/{sleepItemID}`
 
 - **成功响应**：返回 `Sleep` 对象

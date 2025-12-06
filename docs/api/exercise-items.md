@@ -32,6 +32,16 @@
   }
   ```
 
+## `GET /exercise-items/export`
+
+导出分页范围内的运动记录为 CSV
+
+- **查询参数**：同 `GET /exercise-items`
+- **成功响应**：
+  - Content-Type: `text/csv`
+  - Content-Disposition: `attachment; filename="exercise-items.csv"`
+  - Body: CSV 格式文本
+
 ## `GET /exercise-items/{exerciseItemID}`
 
 - **成功响应**：返回 `Exer` 对象

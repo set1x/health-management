@@ -34,7 +34,10 @@ export default defineNuxtConfig({
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { name: 'description', content: '健康生活管理系统 - 您的健康小助手' }
       ],
-      link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.svg' }]
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.svg' },
+        { rel: 'preconnect', href: apiBaseUrl }
+      ]
     },
     pageTransition: { name: 'page', mode: 'out-in' },
     layoutTransition: { name: 'layout', mode: 'out-in' }
@@ -60,13 +63,24 @@ export default defineNuxtConfig({
     '/login': { prerender: true },
 
     // 管理后台页面 - 客户端渲染
-    '/dashboard': { ssr: false },
+    '/dashboard': {
+      ssr: false,
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    },
     '/chat': { ssr: false },
     '/body-data': { ssr: false },
     '/diet': { ssr: false },
     '/exercise': { ssr: false },
     '/sleep': { ssr: false },
     '/profile': { ssr: false }
+  },
+
+  experimental: {
+    payloadExtraction: false,
+    renderJsonPayloads: true,
+    typedPages: true
   },
 
   compatibilityDate: '2025-01-15',
@@ -84,7 +98,17 @@ export default defineNuxtConfig({
   vite: {
     build: {
       sourcemap: false,
-      chunkSizeWarningLimit: 1000
+      chunkSizeWarningLimit: 1000,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            echarts: ['echarts/core', 'echarts/charts', 'echarts/components', 'echarts/renderers']
+          }
+        }
+      }
+    },
+    optimizeDeps: {
+      include: ['echarts/core', 'echarts/charts', 'echarts/components', 'echarts/renderers']
     }
   },
 

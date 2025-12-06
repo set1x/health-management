@@ -1,3 +1,7 @@
+/**
+ * 图表状态管理
+ */
+
 import * as echarts from 'echarts/core'
 import { LineChart } from 'echarts/charts'
 import {

@@ -1,5 +1,5 @@
 /**
- * 认证插件 - 非阻塞式加载，避免首屏加载被阻塞
+ * 认证插件
  */
 export default defineNuxtPlugin(() => {
   const { fetchUserProfile, logout } = useAuth()
@@ -8,7 +8,7 @@ export default defineNuxtPlugin(() => {
 
   const userState = useState<User | null>('user', () => null)
 
-  // 尝试从 localStorage 恢复用户信息缓存
+  // 尝试恢复用户信息缓存
   if (import.meta.client && token.value && !userState.value) {
     try {
       const cachedUser = localStorage.getItem('user_cache')
@@ -27,7 +27,7 @@ export default defineNuxtPlugin(() => {
     }
   }
 
-  // 路由守卫：只在访问受保护页面时才验证 token
+  // 路由守卫：在导航前验证 token，避免闪屏
   router.beforeEach(async (to) => {
     const publicRoutes = ['/login', '/register', '/']
 
@@ -35,14 +35,18 @@ export default defineNuxtPlugin(() => {
       return
     }
 
-    // 有 token 但没有用户信息，后台验证（不阻塞导航）
-    if (token.value && !userState.value) {
-      fetchUserProfile(true).then((isValid) => {
-        if (!isValid) {
-          logout(true)
-          router.push('/login')
-        }
-      })
+    // 没有 token，重定向到登录页
+    if (!token.value) {
+      return navigateTo('/login')
+    }
+
+    // 有 token 但没有用户信息，需要验证（阻塞导航）
+    if (!userState.value) {
+      const isValid = await fetchUserProfile(true)
+      if (!isValid) {
+        logout(true)
+        return navigateTo('/login')
+      }
     }
   })
 })

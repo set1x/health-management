@@ -9,7 +9,8 @@ public interface BodyService {
 
   void addBody(Body body);
 
-  PageBean page(Integer page, Integer pageSize, String userID, LocalDate begin, LocalDate end);
+  PageBean<Body> page(
+      Integer page, Integer pageSize, String userID, LocalDate begin, LocalDate end);
 
   Body getByBodyID(int bodyMetricID);
 

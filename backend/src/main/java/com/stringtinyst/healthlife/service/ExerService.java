@@ -5,7 +5,7 @@ import com.stringtinyst.healthlife.pojo.PageBean;
 import java.time.LocalDate;
 
 public interface ExerService {
-  PageBean page(
+  PageBean<Exer> page(
       Integer page,
       Integer pageSize,
       String userID,
