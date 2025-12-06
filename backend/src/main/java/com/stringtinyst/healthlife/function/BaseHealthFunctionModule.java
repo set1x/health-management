@@ -24,8 +24,8 @@ abstract class BaseHealthFunctionModule {
   }
 
   @FunctionalInterface
-  protected interface PageSupplier {
-    PageBean get() throws Exception;
+  protected interface PageSupplier<T> {
+    PageBean<T> get() throws Exception;
   }
 
   protected String buildCacheKey(String domain, String userID, Object... parts) {
@@ -63,11 +63,11 @@ abstract class BaseHealthFunctionModule {
     return weightKG / (heightMeter * heightMeter);
   }
 
-  protected String runCachedQuery(
+  protected <T> String runCachedQuery(
       String domain,
       String userID,
-      PageSupplier supplier,
-      Function<PageBean, String> successFormatter,
+      PageSupplier<T> supplier,
+      Function<PageBean<T>, String> successFormatter,
       String logLabel,
       Object... cacheParts) {
     String cacheKey = buildCacheKey(domain, userID, cacheParts);
@@ -75,7 +75,7 @@ abstract class BaseHealthFunctionModule {
         cacheKey,
         () -> {
           try {
-            PageBean pageBean = supplier.get();
+            PageBean<T> pageBean = supplier.get();
             return successFormatter.apply(pageBean);
           } catch (Exception e) {
             log.error("{}失败", logLabel, e);

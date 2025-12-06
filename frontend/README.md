@@ -126,6 +126,7 @@ health-management/
 │   │   ├── useAuth.ts                # 认证状态管理
 │   │   ├── useAvatar.ts              # 头像状态检测与 URL 缓存
 │   │   ├── useECharts.ts             # ECharts 配置
+│   │   ├── useExport.ts              # CSV 导出功能
 │   │   └── useSSEConnection.ts       # SSE 连接管理
 │   ├── layouts/
 │   │   ├── blank.vue                 # 登录页
@@ -246,7 +247,7 @@ pnpm test:coverage
 测试文件位于 `app/tests/` 目录，覆盖：
 
 - **工具函数**: `dateUtils.spec.ts`, `metricUtils.spec.ts`, `sse.spec.ts`
-- **Composables**: `composables/useAuth.spec.ts`, `composables/useECharts.spec.ts`, `composables/useAvatar.spec.ts`
+- **Composables**: `composables/useAuth.spec.ts`, `composables/useECharts.spec.ts`, `composables/useAvatar.spec.ts`, `composables/useExport.spec.ts`
 - **组件**: `components/*.spec.ts` (DatePicker, YearMonthSelect, QuickBodyDataDialog 等)
 
 覆盖率报告生成在 `coverage/` 目录

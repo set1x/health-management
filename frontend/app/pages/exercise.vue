@@ -315,6 +315,25 @@ const handleFilterChange = () => {
   loadData()
 }
 
+const { exportData: exportCSV } = useExport()
+
+const exportData = async () => {
+  const additionalParams: Record<string, string | number> = {}
+
+  if (filterExerciseType.value !== 'all') {
+    additionalParams.exerciseType = filterExerciseType.value
+  }
+
+  await exportCSV({
+    endpoint: '/api/exercise-items/export',
+    filename: 'exercise-items.csv',
+    page: pageInfo.current,
+    pageSize: pageInfo.size,
+    dateRange: dateRange.value,
+    additionalParams: Object.keys(additionalParams).length > 0 ? additionalParams : undefined
+  })
+}
+
 onMounted(() => {
   loadData()
   loadTodayData()
@@ -437,6 +456,16 @@ onMounted(() => {
                 <UIcon name="heroicons:magnifying-glass" />
               </template>
               查询
+            </UButton>
+          </div>
+
+          <!-- 导出按钮 -->
+          <div class="flex items-end">
+            <UButton color="success" variant="outline" @click="exportData">
+              <template #leading>
+                <UIcon name="heroicons:arrow-down-tray" />
+              </template>
+              导出 CSV
             </UButton>
           </div>
 

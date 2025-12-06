@@ -303,6 +303,18 @@ const handleFilterChange = () => {
   loadData()
 }
 
+const { exportData: exportCSV } = useExport()
+
+const exportData = async () => {
+  await exportCSV({
+    endpoint: '/api/sleep-items/export',
+    filename: 'sleep-items.csv',
+    page: pageInfo.current,
+    pageSize: pageInfo.size,
+    dateRange: dateRange.value
+  })
+}
+
 onMounted(() => {
   loadData()
   loadTodayData()
@@ -380,6 +392,16 @@ onMounted(() => {
                 <UIcon name="heroicons:magnifying-glass" />
               </template>
               查询
+            </UButton>
+          </div>
+
+          <!-- 导出按钮 -->
+          <div class="flex items-end">
+            <UButton color="success" variant="outline" @click="exportData">
+              <template #leading>
+                <UIcon name="heroicons:arrow-down-tray" />
+              </template>
+              导出 CSV
             </UButton>
           </div>
 
