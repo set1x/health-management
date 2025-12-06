@@ -1,10 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-// Mock fetch
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
 
-// Mock useCookie
 vi.mock('#app', () => ({
   useCookie: vi.fn(() => ({ value: 'mock-token' }))
 }))
