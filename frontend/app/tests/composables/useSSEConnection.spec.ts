@@ -92,15 +92,20 @@ describe('useSSEConnection', () => {
     const mockGenerator = async function* (): AsyncGenerator<{ data: string }> {
       // 生成器在迭代时抛出错误
       throw new Error('Connection failed')
-      yield { data: 'never' } // 但保留以满足生成器语法
+      yield { data: 'never' } // 保留以满足生成器语法
     }
 
-    const promise = executeWithRetry(mockGenerator, async () => {})
+    const promise = executeWithRetry(mockGenerator, async () => {}).catch((error) => {
+      // 捕获错误
+      return error
+    })
 
     // 推进所有定时器直到 Promise 解决
     await vi.runAllTimersAsync()
 
-    await expect(promise).rejects.toThrow('连接失败，已重试 2 次')
+    const result = await promise
+    expect(result).toBeInstanceOf(Error)
+    expect(result.message).toBe('连接失败，已重试 2 次')
     expect(status.value).toBe('failed')
   })
 
@@ -111,7 +116,7 @@ describe('useSSEConnection', () => {
       const error = new Error('User aborted')
       error.name = 'AbortError'
       throw error
-      yield { data: 'never' } // 但保留以满足生成器语法
+      yield { data: 'never' } // 保留以满足生成器语法
     }
 
     await expect(executeWithRetry(mockGenerator, async () => {})).rejects.toThrow('User aborted')
@@ -156,7 +161,7 @@ describe('useSSEConnection', () => {
 
     const promise = executeWithRetry(mockGenerator, async () => {})
 
-    // 延迟应该是: 1000, 2000, 4000, 5000（达到上限）
+    // 延迟应该是：1000, 2000, 4000, 5000（达到上限）
     for (let i = 0; i < 4; i++) {
       const expectedDelay = Math.min(1000 * Math.pow(2, i), 5000)
       delays.push(expectedDelay)

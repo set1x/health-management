@@ -142,7 +142,7 @@ const accountMenuItems = computed<DropdownMenuItem[][]>(() => [
               >
                 <template #leading>
                   <UAvatar
-                    :src="getAvatarUrl()"
+                    v-bind="getAvatarUrl() ? { src: getAvatarUrl() } : {}"
                     :alt="user?.nickname || '用户'"
                     size="xs"
                     icon="heroicons:user"

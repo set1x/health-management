@@ -27,7 +27,7 @@ const timePeriodButtons = [
 ]
 
 const averageWeight = computed(() => {
-  if (props.data.length === 0) return 0
+  if (props.data.length === 0) return '0.0'
   const total = props.data.reduce((sum, item) => sum + item.weight, 0)
   return (total / props.data.length).toFixed(1)
 })
