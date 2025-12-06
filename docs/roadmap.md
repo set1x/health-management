@@ -29,10 +29,11 @@
     - dateUtils: 日期格式化、转换
     - metricUtils: BMI 计算、状态判断
     - sse: SSE 流式请求处理
-  - [x] Composables 测试 (完成于 11 月 27 日)
+  - [x] Composables 测试 (完成于 12 月 6 日)
     - useAuth: 认证状态管理
     - useAvatar: 头像状态检测与 URL 缓存
     - useECharts: 图表初始化与销毁
+    - useSSEConnection: SSE 连接管理、智能重连、指数退避
   - [x] 组件测试 (完成于 11 月 27 日)
     - DatePicker: 日期选择器
     - YearMonthSelect: 年月选择器
@@ -75,6 +76,10 @@
 - [ ] Chat/Ai/WebSearch/Upload 控制器契约测试与超时回退覆盖 (截止日期: 12 月 6 日)
 
 ## 更新日志
+
+### 2025-12-6
+
+- 新增 AI 聊天 SSE 连接优化
 
 ### 2025-12-5
 
@@ -155,4 +160,4 @@
 
 ---
 
-**最后更新于** 2025 年 12 月 5 日
+**最后更新于** 2025 年 12 月 6 日

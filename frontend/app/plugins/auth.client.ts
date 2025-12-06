@@ -8,7 +8,7 @@ export default defineNuxtPlugin(() => {
 
   const userState = useState<User | null>('user', () => null)
 
-  // 尝试从 localStorage 恢复用户信息缓存
+  // 尝试恢复用户信息缓存
   if (import.meta.client && token.value && !userState.value) {
     try {
       const cachedUser = localStorage.getItem('user_cache')

@@ -128,7 +128,7 @@ export const useAuth = () => {
 
       user.value = response.data
 
-      // 缓存用户信息到 localStorage
+      // 缓存用户信息
       if (import.meta.client) {
         try {
           localStorage.setItem('user_cache', JSON.stringify(response.data))

@@ -21,13 +21,25 @@ const pageInfo = reactive({
 })
 
 const dateRange = shallowRef<{ start: DateValue; end: DateValue } | null>(null)
-const healthGoals = reactive({ dailySleepHours: null as number | null })
 
-const loadHealthGoals = () => {
-  if (!import.meta.client) return
-  const saved = localStorage.getItem('healthGoals')
-  if (saved) healthGoals.dailySleepHours = JSON.parse(saved).dailySleepHours
+// 使用 useCookie 读取健康目标
+interface HealthGoals {
+  targetWeight: number | null
+  dailyCaloriesIntake: number | null
+  dailyCaloriesBurn: number | null
+  dailySleepHours: number | null
 }
+
+const healthGoalsCookie = useCookie<HealthGoals>('healthGoals', {
+  default: () => ({
+    targetWeight: 70,
+    dailyCaloriesIntake: 2000,
+    dailyCaloriesBurn: 2000,
+    dailySleepHours: 8
+  })
+})
+
+const healthGoals = computed(() => healthGoalsCookie.value)
 
 const getSleepDurationMinutes = (record: SleepRecord): number => {
   if (!record.bedTime || !record.wakeTime) return 0
@@ -292,7 +304,6 @@ const handleFilterChange = () => {
 }
 
 onMounted(() => {
-  loadHealthGoals()
   loadData()
   loadTodayData()
 })

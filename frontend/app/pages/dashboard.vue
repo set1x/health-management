@@ -31,13 +31,24 @@ const statistics = reactive({
   totalSleepHours: 0
 })
 
-// 健康目标数据
-const healthGoals = reactive({
-  targetWeight: null as number | null,
-  dailyCaloriesIntake: null as number | null,
-  dailyCaloriesBurn: null as number | null,
-  dailySleepHours: null as number | null
+// 使用 useCookie 读取健康目标
+interface HealthGoals {
+  targetWeight: number | null
+  dailyCaloriesIntake: number | null
+  dailyCaloriesBurn: number | null
+  dailySleepHours: number | null
+}
+
+const healthGoalsCookie = useCookie<HealthGoals>('healthGoals', {
+  default: () => ({
+    targetWeight: 70,
+    dailyCaloriesIntake: 2000,
+    dailyCaloriesBurn: 2000,
+    dailySleepHours: 8
+  })
 })
+
+const healthGoals = healthGoalsCookie.value
 
 const isLoadingWeight = ref(false)
 
@@ -126,22 +137,6 @@ const loadCaloriesData = async () => {
   }
 }
 
-const loadHealthGoals = () => {
-  if (!import.meta.client) return
-  try {
-    const saved = localStorage.getItem('healthGoals')
-    if (!saved) return
-
-    const parsed = JSON.parse(saved)
-    healthGoals.targetWeight = parsed.targetWeight
-    healthGoals.dailyCaloriesIntake = parsed.dailyCaloriesIntake || parsed.dailyCalories
-    healthGoals.dailyCaloriesBurn = parsed.dailyCaloriesBurn
-    healthGoals.dailySleepHours = parsed.dailySleepHours
-  } catch {
-    // 忽略加载错误
-  }
-}
-
 const isRefreshing = ref(false)
 
 const refreshData = async () => {
@@ -212,7 +207,6 @@ const refreshData = async () => {
 }
 
 onMounted(async () => {
-  loadHealthGoals()
   await refreshData()
 })
 

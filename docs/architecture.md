@@ -10,9 +10,11 @@
 │  - CSR 仪表盘 / 预渲染公开页                              │
 │  - 组合式 API、useState 状态管理                          │
 │  - ECharts 可视化、Nuxt UI 组件                           │
+│  - SSE 连接管理（自动重连、指数退避）                     │
 └───────────────▲───────────────────────┬───────────────────┘
                 │REST / SSE             │
                 │统一响应 / JWT / Cookie│
+                │智能重连 / 状态监控    │
 ┌───────────────┴───────────────────────▼───────────────────┐
 │                    后端服务 (Spring Boot)                 │
 │  - 控制器层暴露 REST/SSE 接口                             │
@@ -76,11 +78,14 @@
 
 ### AI 咨询流程
 
-1. 前端聊天页（`pages/chat.vue`）通过 `utils/sse.ts` 封装的 SSE 客户端发起 `POST /chat/stream`，并附带当前历史对话与用户问题
-2. 后端 `ChatController` 调用 Spring AI，向 DeepSeek 发送上下文提示词，并根据模型需要依次触发 `BodyFunctions` / `SleepFunctions` / `DietFunctions` / `ExerciseFunctions` / `WebSearchFunction`
-3. 函数执行结果（例如新增某条运动记录的 ID）会回写到模型上下文，推理结果通过 SSE `data: {...}` 流持续回传
-4. SSE 层自带 60 秒超时保护，遇到请求失败会推送友好降级提示
-5. 用户可调用 `DELETE /chat/memory` 清空上下文重新开始对话
+1. 前端聊天页（`pages/chat.vue`）通过 `composables/useSSEConnection.ts` 提供的连接管理和 `utils/sse.ts` 封装的 SSE 客户端发起 `POST /chat/stream`，并附带当前历史对话与用户问题
+2. 连接管理层使用指数退避算法自动处理网络中断和重连，最多重试 5 次
+3. 连接状态实时显示：已连接（绿色）、连接中（黄色动画）、连接已断开（灰色）、连接失败（红色）
+4. 后端 `ChatController` 调用 Spring AI，向 DeepSeek 发送上下文提示词，并根据模型需要依次触发 `BodyFunctions` / `SleepFunctions` / `DietFunctions` / `ExerciseFunctions` / `WebSearchFunction`
+5. 函数执行结果（例如新增某条运动记录的 ID）会回写到模型上下文，推理结果通过 SSE `data: {...}` 流持续回传
+6. SSE 层自带 60 秒超时保护，遇到请求失败会推送友好降级提示，并触发自动重连
+7. 用户可调用 `DELETE /chat/memory` 清空上下文重新开始对话
+8. 对话历史本地存储最近 100 条消息，重连后自动恢复上下文
 
 ## 数据流交互
 

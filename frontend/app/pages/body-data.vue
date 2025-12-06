@@ -40,13 +40,24 @@ const bmiInfo = computed(() => {
   }
 })
 
-const healthGoals = reactive({ targetWeight: null as number | null })
-
-const loadHealthGoals = () => {
-  if (!import.meta.client) return
-  const saved = localStorage.getItem('healthGoals')
-  if (saved) healthGoals.targetWeight = JSON.parse(saved).targetWeight
+// 使用 useCookie 读取健康目标
+interface HealthGoals {
+  targetWeight: number | null
+  dailyCaloriesIntake: number | null
+  dailyCaloriesBurn: number | null
+  dailySleepHours: number | null
 }
+
+const healthGoalsCookie = useCookie<HealthGoals>('healthGoals', {
+  default: () => ({
+    targetWeight: 70,
+    dailyCaloriesIntake: 2000,
+    dailyCaloriesBurn: 2000,
+    dailySleepHours: 8
+  })
+})
+
+const healthGoals = computed(() => healthGoalsCookie.value)
 
 const columns: ColumnDef<BodyData>[] = [
   {
@@ -228,7 +239,6 @@ const handleFilterChange = () => {
 }
 
 onMounted(() => {
-  loadHealthGoals()
   loadData()
 })
 </script>

@@ -34,6 +34,13 @@
 - **Marked** - Markdown 解析器
 - **DOMPurify** - XSS 防护
 
+### SSE 连接管理
+
+- **智能重连机制** - 指数退避算法
+- **连接状态监控** - 实时显示连接状态和重试进度
+- **网络容错能力** - 自动处理网络中断，最多重试 5 次
+- **对话历史保护** - 重连时自动恢复上下文
+
 ### 开发工具
 
 - **ESLint** - 代码质量检查
@@ -118,7 +125,8 @@ health-management/
 │   ├── composables/
 │   │   ├── useAuth.ts                # 认证状态管理
 │   │   ├── useAvatar.ts              # 头像状态检测与 URL 缓存
-│   │   └── useECharts.ts             # ECharts 配置
+│   │   ├── useECharts.ts             # ECharts 配置
+│   │   └── useSSEConnection.ts       # SSE 连接管理
 │   ├── layouts/
 │   │   ├── blank.vue                 # 登录页
 │   │   └── default.vue               # 导航栏

@@ -17,30 +17,59 @@ const {
 } = useAuth()
 const tokenCookie = useCookie<string | null>('token')
 
-// 基础状态
-const loading = ref(true)
-const calendarValue = shallowRef<DateValue>(getTodayDateValue())
-const avatarFile = ref<File | null>(null)
-const showEditDialog = ref(false)
-const showGoalsDialog = ref(false)
+// UI 状态
+const state = reactive({
+  loading: true,
+  loadError: null as string | null,
+  showEditDialog: false,
+  showGoalsDialog: false,
+  basicInfoSubmitting: false,
+  passwordSubmitting: false
+})
 
-// 用户信息
+// 表单数据
+const avatarFile = ref<File | null>(null)
+const calendarValue = shallowRef<DateValue>(getTodayDateValue())
+const forms = reactive({
+  edit: { nickname: '', gender: '', dateOfBirth: '' },
+  password: { newPassword: '', confirmPassword: '' },
+  goals: {
+    targetWeight: null as number | null,
+    dailyCaloriesIntake: null as number | null,
+    dailyCaloriesBurn: null as number | null,
+    dailySleepHours: null as number | null
+  }
+})
+
 const userInfo = computed(() => user.value as (User & { registrationDate?: string }) | null)
 const avatarUrl = computed(() =>
   avatarFile.value ? URL.createObjectURL(avatarFile.value) : getAvatarUrl()
 )
 
-// 健康数据
 const healthStats = reactive({
   totalRecords: { diet: 0, exercise: 0, body: 0 },
   registrationDays: 0
 })
-const goals = reactive({
-  targetWeight: 70 as number | null,
-  dailyCaloriesIntake: 2000 as number | null,
-  dailyCaloriesBurn: 2000 as number | null,
-  dailySleepHours: 8 as number | null
+
+interface HealthGoals {
+  targetWeight: number | null
+  dailyCaloriesIntake: number | null
+  dailyCaloriesBurn: number | null
+  dailySleepHours: number | null
+}
+
+const healthGoalsCookie = useCookie<HealthGoals>('healthGoals', {
+  default: () => ({
+    targetWeight: 70,
+    dailyCaloriesIntake: 2000,
+    dailyCaloriesBurn: 2000,
+    dailySleepHours: 8
+  }),
+  maxAge: 60 * 60 * 24 * 365 // 保存 1 年
 })
+
+const goals = healthGoalsCookie.value
+
 const todayData = reactive({
   weight: null as number | null,
   calories: 0,
@@ -48,46 +77,31 @@ const todayData = reactive({
   sleepHours: 0
 })
 
-// 表单状态
-const editForm = reactive({ nickname: '', gender: '', dateOfBirth: '' })
-const passwordForm = reactive({ newPassword: '', confirmPassword: '' })
-const goalsForm = reactive({
-  targetWeight: null as number | null,
-  dailyCaloriesIntake: null as number | null,
-  dailyCaloriesBurn: null as number | null,
-  dailySleepHours: null as number | null
-})
-const basicInfoSubmitting = ref(false)
-const passwordSubmitting = ref(false)
-
-// 统计数据配置
 const HEALTH_ENDPOINTS = [
   { key: 'diet' as const, url: '/api/diet-items', label: '饮食记录' },
   { key: 'exercise' as const, url: '/api/exercise-items', label: '运动记录' },
   { key: 'body' as const, url: '/api/body-metrics', label: '体重记录' }
 ] as const
 
-// 性别选项
 const GENDER_OPTIONS = [
   { label: '男', value: '男' },
   { label: '女', value: '女' }
 ]
 
-const refreshRegistrationDays = () => {
-  const registrationDate = userInfo.value?.registrationDate
-  if (!registrationDate) return (healthStats.registrationDays = 0)
-  healthStats.registrationDays = Math.ceil(
-    (Date.now() - new Date(registrationDate).getTime()) / (1000 * 60 * 60 * 24)
-  )
+const utils = {
+  refreshRegistrationDays: () => {
+    const registrationDate = userInfo.value?.registrationDate
+    healthStats.registrationDays = registrationDate
+      ? Math.ceil((Date.now() - new Date(registrationDate).getTime()) / (1000 * 60 * 60 * 24))
+      : 0
+  },
+  formatDate: (dateStr?: string) => (dateStr ? new Date(dateStr).toLocaleDateString('zh-CN') : ''),
+  showError: (title: string, error: unknown) => {
+    const message = error instanceof Error ? error.message : title
+    toast.add({ title, description: message, color: 'error' })
+  }
 }
 
-// 格式化日期
-const formatDate = (dateStr?: string) => {
-  if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('zh-CN')
-}
-
-// 上传头像
 const uploadAvatar = async () => {
   if (!avatarFile.value) {
     toast.add({ title: '请选择头像图片', color: 'error' })
@@ -110,26 +124,27 @@ const uploadAvatar = async () => {
     } else {
       toast.add({ title: msg || '上传头像失败', color: 'error' })
     }
-  } catch {
-    toast.add({ title: '上传头像失败', color: 'error' })
+  } catch (error) {
+    utils.showError('上传头像失败', error)
   }
 }
 
-// 加载用户数据
 const loadUserData = async () => {
-  loading.value = true
+  state.loading = true
+  state.loadError = null
+
   try {
     await fetchUserProfile()
-    refreshRegistrationDays()
+    utils.refreshRegistrationDays()
     await Promise.all([loadHealthStats(), loadTodayData()])
-  } catch {
-    toast.add({ title: '加载数据失败', color: 'error' })
+  } catch (error) {
+    state.loadError = error instanceof Error ? error.message : '加载数据失败'
+    utils.showError('加载数据失败', error)
   } finally {
-    loading.value = false
+    state.loading = false
   }
 }
 
-// 加载健康统计数据
 const loadHealthStats = async () => {
   if (!userInfo.value?.userID || !tokenCookie.value) return
 
@@ -150,7 +165,6 @@ const loadHealthStats = async () => {
   })
 }
 
-// 加载今日实际数据
 const loadTodayData = async () => {
   if (!userInfo.value?.userID || !tokenCookie.value) return
 
@@ -196,14 +210,13 @@ const loadTodayData = async () => {
   }
 }
 
-// 编辑基本信息
 const editBasicInfo = () => {
-  Object.assign(editForm, {
+  Object.assign(forms.edit, {
     nickname: userInfo.value?.nickname || '',
     gender: userInfo.value?.gender || '',
     dateOfBirth: userInfo.value?.dateOfBirth || ''
   })
-  Object.assign(passwordForm, { newPassword: '', confirmPassword: '' })
+  Object.assign(forms.password, { newPassword: '', confirmPassword: '' })
 
   const dob = userInfo.value?.dateOfBirth
   if (dob) {
@@ -214,90 +227,117 @@ const editBasicInfo = () => {
     calendarValue.value = getTodayDateValue()
   }
 
-  showEditDialog.value = true
+  state.showEditDialog = true
 }
 
-// 保存基本信息
-const saveBasicInfo = async () => {
-  if (basicInfoSubmitting.value) return
-  if (!editForm.nickname?.trim()) {
-    toast.add({ title: '请输入昵称', color: 'error' })
-    return
-  }
-  if (!editForm.gender) {
-    toast.add({ title: '请选择性别', color: 'error' })
-    return
-  }
+const validate = {
+  basicInfo: () => {
+    const errors: string[] = []
+    const nickname = forms.edit.nickname?.trim()
 
-  basicInfoSubmitting.value = true
+    if (!nickname) errors.push('请输入昵称')
+    else if (nickname.length < 2) errors.push('昵称至少 2 个字符')
+    else if (nickname.length > 20) errors.push('昵称最多 20 个字符')
+
+    if (!forms.edit.gender) errors.push('请选择性别')
+
+    return errors
+  },
+  password: () => {
+    const errors: string[] = []
+    const { newPassword, confirmPassword } = forms.password
+
+    if (!newPassword) errors.push('请输入新密码')
+    else if (newPassword.length < 6) errors.push('密码至少 6 个字符')
+    else if (newPassword.length > 50) errors.push('密码最多 50 个字符')
+
+    if (!confirmPassword) errors.push('请确认新密码')
+    else if (newPassword !== confirmPassword) errors.push('两次输入的密码不一致')
+
+    if (!userInfo.value?.nickname || !userInfo.value?.email) {
+      errors.push('用户信息不完整，无法修改密码')
+    }
+
+    return errors
+  }
+}
+
+const saveBasicInfo = async () => {
+  if (state.basicInfoSubmitting) return
+
+  const errors = validate.basicInfo()
+  if (errors.length > 0) {
+    toast.add({ title: '表单验证失败', description: errors.join('；'), color: 'error' })
+    return
+  }
+  state.basicInfoSubmitting = true
   try {
     const success = await updateProfileApi({
-      nickname: editForm.nickname,
-      gender: editForm.gender,
+      nickname: forms.edit.nickname.trim(),
+      gender: forms.edit.gender,
       dateOfBirth: dateValueToString(calendarValue.value)
     })
 
     if (success) {
       await fetchUserProfile(true)
-      refreshRegistrationDays()
-      showEditDialog.value = false
+      utils.refreshRegistrationDays()
+      state.showEditDialog = false
       toast.add({ title: '保存成功', description: '基本信息已更新', color: 'success' })
+    } else {
+      toast.add({ title: '保存失败', description: '服务器返回失败状态', color: 'error' })
     }
-  } catch {
-    toast.add({ title: '保存失败', color: 'error' })
+  } catch (error) {
+    utils.showError('保存失败', error)
   } finally {
-    basicInfoSubmitting.value = false
+    state.basicInfoSubmitting = false
   }
 }
 
-// 更新密码
 const updatePassword = async () => {
-  if (passwordSubmitting.value) return
-  if (!passwordForm.newPassword || passwordForm.newPassword.length < 6) {
-    toast.add({ title: '请填写至少 6 位的新密码', color: 'error' })
-    return
-  }
-  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-    toast.add({ title: '两次输入的密码不一致', color: 'error' })
-    return
-  }
-  if (!userInfo.value?.nickname || !userInfo.value?.email) {
-    toast.add({ title: '缺少昵称或邮箱，无法修改密码', color: 'error' })
-    return
-  }
+  if (state.passwordSubmitting) return
 
-  passwordSubmitting.value = true
+  const errors = validate.password()
+  if (errors.length > 0) {
+    toast.add({ title: '密码验证失败', description: errors.join('；'), color: 'error' })
+    return
+  }
+  state.passwordSubmitting = true
   try {
     const success = await resetPasswordApi({
-      nickname: userInfo.value.nickname!,
-      email: userInfo.value.email!,
-      newPassword: passwordForm.newPassword,
-      confirmPassword: passwordForm.confirmPassword
+      nickname: userInfo.value!.nickname!,
+      email: userInfo.value!.email!,
+      ...forms.password
     })
 
-    if (success) Object.assign(passwordForm, { newPassword: '', confirmPassword: '' })
+    if (success) {
+      Object.assign(forms.password, { newPassword: '', confirmPassword: '' })
+      toast.add({ title: '密码已更新', description: '下次登录请使用新密码', color: 'success' })
+    } else {
+      toast.add({ title: '密码更新失败', description: '服务器返回失败状态', color: 'error' })
+    }
+  } catch (error) {
+    utils.showError('密码更新失败', error)
   } finally {
-    passwordSubmitting.value = false
+    state.passwordSubmitting = false
   }
 }
 
-// 保存健康目标
 const saveGoals = async () => {
   const validations = [
-    { value: goalsForm.targetWeight, min: 30, max: 200, msg: '目标体重应在 30-200 kg 之间' },
+    { value: forms.goals.targetWeight, min: 30, max: 200, msg: '目标体重应在 30-200 kg 之间' },
     {
-      value: goalsForm.dailyCaloriesIntake,
+      value: forms.goals.dailyCaloriesIntake,
       min: 800,
       max: 5000,
       msg: '每日卡路里摄入目标应在 800-5000 kcal 之间'
     },
     {
-      value: goalsForm.dailyCaloriesBurn,
+      value: forms.goals.dailyCaloriesBurn,
       min: 200,
       max: 3000,
       msg: '每日卡路里消耗目标应在 200-3000 kcal 之间'
     },
-    { value: goalsForm.dailySleepHours, min: 4, max: 12, msg: '每日睡眠目标应在 4-12 小时之间' }
+    { value: forms.goals.dailySleepHours, min: 4, max: 12, msg: '每日睡眠目标应在 4-12 小时之间' }
   ]
 
   const invalid = validations.find(
@@ -308,9 +348,8 @@ const saveGoals = async () => {
     return
   }
 
-  Object.assign(goals, goalsForm)
-  localStorage.setItem('healthGoals', JSON.stringify(goals))
-  showGoalsDialog.value = false
+  healthGoalsCookie.value = { ...forms.goals }
+  state.showGoalsDialog = false
   toast.add({ title: '设置成功', description: '健康目标已更新', color: 'success' })
 }
 
@@ -337,13 +376,6 @@ const currentWeight = computed(() => todayData.weight)
 
 onMounted(() => {
   loadUserData()
-
-  try {
-    const saved = localStorage.getItem('healthGoals')
-    if (saved) Object.assign(goals, JSON.parse(saved))
-  } catch {
-    // Ignore errors
-  }
 })
 </script>
 
@@ -352,8 +384,28 @@ onMounted(() => {
     <UPageHeader title="个人资料" description="管理您的个人信息" class="pt-2! sm:pt-3!" />
 
     <UPageBody>
+      <!-- 错误状态 -->
+      <div v-if="state.loadError && !state.loading" class="py-12">
+        <UCard>
+          <div class="flex flex-col items-center gap-6 py-8 text-center">
+            <div
+              class="flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900"
+            >
+              <UIcon name="heroicons:exclamation-triangle" class="h-8 w-8 text-red-600" />
+            </div>
+            <div>
+              <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">加载失败</h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400">{{ state.loadError }}</p>
+            </div>
+            <UButton color="primary" size="lg" icon="heroicons:arrow-path" @click="loadUserData">
+              重新加载
+            </UButton>
+          </div>
+        </UCard>
+      </div>
+
       <!-- Loading 状态 -->
-      <div v-if="loading">
+      <div v-else-if="state.loading">
         <div class="space-y-6">
           <!-- Loading 进度条 -->
           <div class="flex flex-col items-center justify-center py-12">
@@ -458,7 +510,9 @@ onMounted(() => {
                       </div>
                     </div>
 
-                    <p v-if="avatarFile" class="mt-1 text-center text-xs">{{ avatarFile.name }}</p>
+                    <p v-if="avatarFile" class="mt-1 text-center text-xs">
+                      {{ avatarFile.name }}
+                    </p>
                   </UFileUpload>
 
                   <p class="text-center text-xs">JPG、PNG、GIF</p>
@@ -473,7 +527,7 @@ onMounted(() => {
                     { label: '邮箱', value: userInfo?.email },
                     { label: '昵称', value: userInfo?.nickname },
                     { label: '性别', value: userInfo?.gender },
-                    { label: '出生日期', value: formatDate(userInfo?.dateOfBirth) }
+                    { label: '出生日期', value: utils.formatDate(userInfo?.dateOfBirth) }
                   ]"
                   :key="item.label"
                   class="flex items-center justify-between"
@@ -521,11 +575,11 @@ onMounted(() => {
                 icon="heroicons:cog-6-tooth"
                 @click="
                   () => {
-                    goalsForm.targetWeight = goals.targetWeight
-                    goalsForm.dailyCaloriesIntake = goals.dailyCaloriesIntake
-                    goalsForm.dailyCaloriesBurn = goals.dailyCaloriesBurn
-                    goalsForm.dailySleepHours = goals.dailySleepHours
-                    showGoalsDialog = true
+                    forms.goals.targetWeight = goals.targetWeight
+                    forms.goals.dailyCaloriesIntake = goals.dailyCaloriesIntake
+                    forms.goals.dailyCaloriesBurn = goals.dailyCaloriesBurn
+                    forms.goals.dailySleepHours = goals.dailySleepHours
+                    state.showGoalsDialog = true
                   }
                 "
               >
@@ -593,7 +647,7 @@ onMounted(() => {
     </UPageBody>
 
     <!-- 编辑基本信息对话框 -->
-    <UModal v-model:open="showEditDialog" :ui="{ wrapper: 'sm:max-w-2xl' }">
+    <UModal v-model:open="state.showEditDialog" :ui="{ wrapper: 'sm:max-w-2xl' }">
       <template #header>
         <div class="flex items-center gap-3">
           <div
@@ -626,13 +680,13 @@ onMounted(() => {
                 </label>
                 <UInput
                   id="edit-nickname"
-                  v-model="editForm.nickname"
+                  v-model="forms.edit.nickname"
                   placeholder="请输入昵称"
                   size="lg"
                 >
                   <template #trailing>
                     <UIcon
-                      v-if="editForm.nickname"
+                      v-if="forms.edit.nickname"
                       name="heroicons:check-circle"
                       class="h-5 w-5 text-green-500"
                     />
@@ -648,7 +702,7 @@ onMounted(() => {
                 </label>
                 <USelect
                   id="edit-gender"
-                  v-model="editForm.gender"
+                  v-model="forms.edit.gender"
                   :items="GENDER_OPTIONS"
                   placeholder="请选择性别"
                   size="lg"
@@ -681,39 +735,39 @@ onMounted(() => {
                 </label>
                 <UInput
                   id="edit-new-password"
-                  v-model="passwordForm.newPassword"
+                  v-model="forms.password.newPassword"
                   type="password"
                   placeholder="请输入新密码"
                   size="lg"
                 >
                   <template #trailing>
                     <UIcon
-                      v-if="passwordForm.newPassword && passwordForm.newPassword.length >= 6"
+                      v-if="forms.password.newPassword && forms.password.newPassword.length >= 6"
                       name="heroicons:check-circle"
                       class="h-5 w-5 text-green-500"
                     />
                     <UIcon
-                      v-else-if="passwordForm.newPassword"
+                      v-else-if="forms.password.newPassword"
                       name="heroicons:exclamation-circle"
                       class="h-5 w-5 text-amber-500"
                     />
                   </template>
                 </UInput>
-                <p v-if="passwordForm.newPassword" class="flex items-center gap-1 text-xs">
+                <p v-if="forms.password.newPassword" class="flex items-center gap-1 text-xs">
                   <UIcon
                     :name="
-                      passwordForm.newPassword.length >= 6
+                      forms.password.newPassword.length >= 6
                         ? 'heroicons:check-circle'
                         : 'heroicons:x-circle'
                     "
                     :class="
-                      passwordForm.newPassword.length >= 6
+                      forms.password.newPassword.length >= 6
                         ? 'text-green-500'
                         : 'text-gray-400 dark:text-gray-500'
                     "
                     class="h-3.5 w-3.5"
                   />
-                  <span :class="passwordForm.newPassword.length >= 6 ? 'text-green-600' : ''">
+                  <span :class="forms.password.newPassword.length >= 6 ? 'text-green-600' : ''">
                     至少 6 个字符
                   </span>
                 </p>
@@ -729,7 +783,7 @@ onMounted(() => {
                 </label>
                 <UInput
                   id="edit-confirm-password"
-                  v-model="passwordForm.confirmPassword"
+                  v-model="forms.password.confirmPassword"
                   type="password"
                   placeholder="请再次输入新密码"
                   size="lg"
@@ -737,36 +791,36 @@ onMounted(() => {
                   <template #trailing>
                     <UIcon
                       v-if="
-                        passwordForm.confirmPassword &&
-                        passwordForm.newPassword === passwordForm.confirmPassword
+                        forms.password.confirmPassword &&
+                        forms.password.newPassword === forms.password.confirmPassword
                       "
                       name="heroicons:check-circle"
                       class="h-5 w-5 text-green-500"
                     />
                     <UIcon
-                      v-else-if="passwordForm.confirmPassword"
+                      v-else-if="forms.password.confirmPassword"
                       name="heroicons:x-circle"
                       class="h-5 w-5 text-red-500"
                     />
                   </template>
                 </UInput>
                 <p
-                  v-if="passwordForm.confirmPassword"
+                  v-if="forms.password.confirmPassword"
                   class="flex items-center gap-1 text-xs"
                   :class="
-                    passwordForm.newPassword === passwordForm.confirmPassword
+                    forms.password.newPassword === forms.password.confirmPassword
                       ? 'text-green-600'
                       : 'text-red-600'
                   "
                 >
                   <UIcon
                     :name="
-                      passwordForm.newPassword === passwordForm.confirmPassword
+                      forms.password.newPassword === forms.password.confirmPassword
                         ? 'heroicons:check-circle'
                         : 'heroicons:x-circle'
                     "
                     :class="
-                      passwordForm.newPassword === passwordForm.confirmPassword
+                      forms.password.newPassword === forms.password.confirmPassword
                         ? 'text-green-500'
                         : 'text-red-500'
                     "
@@ -774,7 +828,7 @@ onMounted(() => {
                   />
                   <span>
                     {{
-                      passwordForm.newPassword === passwordForm.confirmPassword
+                      forms.password.newPassword === forms.password.confirmPassword
                         ? '密码匹配'
                         : '密码不匹配'
                     }}
@@ -796,18 +850,18 @@ onMounted(() => {
             variant="solid"
             size="lg"
             icon="heroicons:check"
-            :loading="basicInfoSubmitting"
+            :loading="state.basicInfoSubmitting"
             @click="saveBasicInfo"
           >
             保存基本信息
           </UButton>
           <UButton
-            v-if="passwordForm.newPassword || passwordForm.confirmPassword"
+            v-if="forms.password.newPassword || forms.password.confirmPassword"
             color="warning"
             variant="solid"
             size="lg"
             icon="heroicons:key"
-            :loading="passwordSubmitting"
+            :loading="state.passwordSubmitting"
             @click="updatePassword"
           >
             更新密码
@@ -817,14 +871,18 @@ onMounted(() => {
     </UModal>
 
     <!-- 设置健康目标对话框 -->
-    <UModal v-model:open="showGoalsDialog" title="设置健康目标" description="设置您的每日健康目标">
+    <UModal
+      v-model:open="state.showGoalsDialog"
+      title="设置健康目标"
+      description="设置您的每日健康目标"
+    >
       <template #body="{ close }">
         <div class="space-y-4">
           <div>
             <label for="goal-weight" class="mb-2 block text-sm font-medium">目标体重（kg）</label>
             <UInput
               id="goal-weight"
-              v-model.number="goalsForm.targetWeight"
+              v-model.number="forms.goals.targetWeight"
               type="number"
               step="0.1"
               placeholder="请输入目标体重"
@@ -836,7 +894,7 @@ onMounted(() => {
             >
             <UInput
               id="goal-calories-intake"
-              v-model.number="goalsForm.dailyCaloriesIntake"
+              v-model.number="forms.goals.dailyCaloriesIntake"
               type="number"
               placeholder="请输入目标值"
             />
@@ -847,7 +905,7 @@ onMounted(() => {
             >
             <UInput
               id="goal-calories-burn"
-              v-model.number="goalsForm.dailyCaloriesBurn"
+              v-model.number="forms.goals.dailyCaloriesBurn"
               type="number"
               placeholder="请输入目标值"
             />
@@ -858,7 +916,7 @@ onMounted(() => {
             </label>
             <UInput
               id="goal-sleep"
-              v-model.number="goalsForm.dailySleepHours"
+              v-model.number="forms.goals.dailySleepHours"
               type="number"
               step="0.5"
               placeholder="请输入每日睡眠目标"

@@ -22,6 +22,17 @@ const messages = reactive<Message[]>([])
 const messagesContainer = ref<HTMLElement>()
 const abortController = ref<AbortController | null>(null)
 
+// SSE 连接管理
+const {
+  status: connectionStatus,
+  retryCount,
+  executeWithRetry
+} = useSSEConnection({
+  maxRetries: 5,
+  initialDelay: 1000,
+  maxDelay: 30000
+})
+
 const CHAT_HISTORY_KEY = 'health_chat_history'
 const SUGGESTIONS = [
   '如何制定减肥计划？',
@@ -35,6 +46,30 @@ const SUGGESTIONS = [
 const toast = useToast()
 const { getAvatarUrl } = useAvatar()
 const avatarUrl = computed(() => getAvatarUrl())
+
+// 连接状态提示
+const connectionStatusText = computed(() => {
+  switch (connectionStatus.value) {
+    case 'connected':
+      return { text: '已连接', color: 'success', icon: 'heroicons:check-circle' }
+    case 'connecting':
+      return { text: '连接中...', color: 'warning', icon: 'heroicons:arrow-path' }
+    case 'disconnected':
+      return { text: '连接已断开', color: 'neutral', icon: 'heroicons:x-circle' }
+    case 'failed':
+      return {
+        text: '连接失败，请检查网络',
+        color: 'error',
+        icon: 'heroicons:exclamation-triangle'
+      }
+    default:
+      return { text: '未连接', color: 'neutral', icon: 'heroicons:x-circle' }
+  }
+})
+
+const showConnectionStatus = computed(() => {
+  return connectionStatus.value === 'connecting' || connectionStatus.value === 'failed'
+})
 
 marked.setOptions({
   gfm: true,
@@ -197,23 +232,26 @@ const handleSubmit = async (e: Event) => {
   try {
     abortController.value = new AbortController()
 
-    const stream = ssePost<{ content: string; partial?: boolean }>('/api/chat/stream', {
-      signal: abortController.value.signal,
-      params: {
-        query: userMessage,
-        history: messages.slice(0, -1).map((m) => ({
-          role: m.role,
-          content: m.content
-        }))
+    // 使用带重连的 SSE 请求
+    await executeWithRetry(
+      () =>
+        ssePost<{ content: string; partial?: boolean }>('/api/chat/stream', {
+          signal: abortController.value!.signal,
+          params: {
+            query: userMessage,
+            history: messages.slice(0, -1).map((m) => ({
+              role: m.role,
+              content: m.content
+            }))
+          }
+        }),
+      async (chunk: { content: string; partial?: boolean }) => {
+        if (messages[aiMessageIndex]) {
+          messages[aiMessageIndex].content += chunk.content
+          await scrollToBottom()
+        }
       }
-    })
-
-    for await (const chunk of stream) {
-      if (messages[aiMessageIndex]) {
-        messages[aiMessageIndex].content += chunk.content
-        await scrollToBottom()
-      }
-    }
+    )
 
     if (messages[aiMessageIndex]) {
       messages[aiMessageIndex].isStreaming = false
@@ -228,10 +266,11 @@ const handleSubmit = async (e: Event) => {
       return
     }
 
-    toast.add({ title: '发送消息失败，请稍后重试', color: 'error' })
+    const errorMessage = error instanceof Error ? error.message : '发送消息失败，请稍后重试'
+    toast.add({ title: errorMessage, color: 'error' })
 
     if (messages[aiMessageIndex]) {
-      messages[aiMessageIndex].content = '抱歉，我暂时无法回复，请稍后重试。'
+      messages[aiMessageIndex].content = '抱歉，我暂时无法回复。请检查网络连接后重试。'
       messages[aiMessageIndex].isStreaming = false
       saveChatHistory()
     }
@@ -284,6 +323,29 @@ onUnmounted(() => {
     />
 
     <UPageBody class="flex h-[calc(100vh-80px)] flex-col p-0!">
+      <!-- 连接状态提示 -->
+      <div v-if="showConnectionStatus" class="shrink-0 border-b border-default">
+        <div
+          :class="[
+            'flex items-center justify-center gap-2 px-4 py-2 text-sm',
+            connectionStatusText.color === 'success'
+              ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+              : connectionStatusText.color === 'warning'
+                ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400'
+                : connectionStatusText.color === 'error'
+                  ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+                  : 'bg-gray-50 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400'
+          ]"
+        >
+          <UIcon
+            :name="connectionStatusText.icon"
+            :class="['h-4 w-4', connectionStatus === 'connecting' ? 'animate-spin' : '']"
+          />
+          <span>{{ connectionStatusText.text }}</span>
+          <span v-if="retryCount > 0" class="text-xs opacity-75">(重试: {{ retryCount }}/5)</span>
+        </div>
+      </div>
+
       <!-- 聊天记录区域 - 固定高度，可滚动 -->
       <div ref="messagesContainer" class="flex-1 overflow-y-auto px-4 py-4 sm:px-6">
         <!-- 空状态 -->
