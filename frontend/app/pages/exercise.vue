@@ -299,6 +299,11 @@ const handlePageChange = (page: number) => {
   loadData()
 }
 
+const handleFilterChange = () => {
+  pageInfo.current = 1
+  loadData()
+}
+
 onMounted(() => {
   loadHealthGoals()
   loadData()
@@ -384,7 +389,6 @@ onMounted(() => {
               range
               icon="heroicons:calendar"
               class="w-full"
-              @update:model-value="loadData"
             />
           </div>
 
@@ -403,7 +407,6 @@ onMounted(() => {
                 icon: 'mdi:magnify'
               }"
               class="w-full"
-              @update:model-value="loadData"
             >
               <template #leading>
                 <UIcon
@@ -415,6 +418,16 @@ onMounted(() => {
                 />
               </template>
             </USelectMenu>
+          </div>
+
+          <!-- 查询按钮 -->
+          <div class="flex items-end">
+            <UButton color="primary" @click="handleFilterChange">
+              <template #leading>
+                <UIcon name="heroicons:magnifying-glass" />
+              </template>
+              查询
+            </UButton>
           </div>
 
           <!-- 重置按钮 -->
@@ -451,10 +464,10 @@ onMounted(() => {
         <template #footer>
           <div class="flex items-center justify-center border-t pt-4">
             <UPagination
-              v-model:page="pageInfo.current"
+              :model-value="pageInfo.current"
               :total="pageInfo.total"
               :items-per-page="pageInfo.size"
-              @update:page="handlePageChange"
+              @update:model-value="handlePageChange"
             />
           </div>
         </template>

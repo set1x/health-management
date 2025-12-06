@@ -197,7 +197,7 @@ const handleSubmit = async (e: Event) => {
   try {
     abortController.value = new AbortController()
 
-    const stream = await ssePost<{ content: string; partial?: boolean }>('/api/chat/stream', {
+    const stream = ssePost<{ content: string; partial?: boolean }>('/api/chat/stream', {
       signal: abortController.value.signal,
       params: {
         query: userMessage,

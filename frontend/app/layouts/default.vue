@@ -101,24 +101,13 @@ const accountMenuItems = computed<DropdownMenuItem[][]>(() => [
         :min-size="15"
         :max-size="30"
         :collapsed-size="5"
-        :ui="{
-          root: 'transition-all duration-300 ease-in-out'
-        }"
       >
         <template #header="{ collapsed }">
           <div class="flex items-center gap-3">
             <UIcon name="mdi:heart-pulse" class="text-2xl text-primary" />
-            <Transition
-              enter-active-class="transition-opacity duration-300 delay-150 ease-out"
-              leave-active-class="transition-opacity duration-150 ease-in"
-              enter-from-class="opacity-0"
-              leave-to-class="opacity-0"
-              mode="out-in"
-            >
-              <h1 v-if="!collapsed" class="overflow-hidden text-lg font-bold whitespace-nowrap">
-                健康管理系统
-              </h1>
-            </Transition>
+            <span v-if="!collapsed" class="overflow-hidden text-lg font-bold whitespace-nowrap">
+              健康管理系统
+            </span>
           </div>
         </template>
 

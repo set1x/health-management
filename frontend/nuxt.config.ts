@@ -60,13 +60,24 @@ export default defineNuxtConfig({
     '/login': { prerender: true },
 
     // 管理后台页面 - 客户端渲染
-    '/dashboard': { ssr: false },
+    '/dashboard': {
+      ssr: false,
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    },
     '/chat': { ssr: false },
     '/body-data': { ssr: false },
     '/diet': { ssr: false },
     '/exercise': { ssr: false },
     '/sleep': { ssr: false },
     '/profile': { ssr: false }
+  },
+
+  experimental: {
+    payloadExtraction: false,
+    renderJsonPayloads: true,
+    typedPages: true
   },
 
   compatibilityDate: '2025-01-15',
@@ -84,7 +95,17 @@ export default defineNuxtConfig({
   vite: {
     build: {
       sourcemap: false,
-      chunkSizeWarningLimit: 1000
+      chunkSizeWarningLimit: 1000,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            echarts: ['echarts/core', 'echarts/charts', 'echarts/components', 'echarts/renderers']
+          }
+        }
+      }
+    },
+    optimizeDeps: {
+      include: ['echarts/core', 'echarts/charts', 'echarts/components', 'echarts/renderers']
     }
   },
 

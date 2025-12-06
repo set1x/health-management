@@ -30,18 +30,6 @@ export const useAuth = () => {
     })
   }
 
-  // 解析 JWT token 获取 userID
-  const parseJwt = (tokenStr: string) => {
-    try {
-      const base64Url = tokenStr.split('.')[1]
-      if (!base64Url) return null
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-      return JSON.parse(atob(base64))
-    } catch {
-      return null
-    }
-  }
-
   const login = async (loginData: LoginRequest) => {
     try {
       const response = await $fetch<{ code: number; data?: string; msg?: string }>(
@@ -58,19 +46,16 @@ export const useAuth = () => {
 
       token.value = response.data
 
-      // 从 JWT 中提取 userID
-      const payload = parseJwt(response.data)
-      if (payload) {
-        userID.value =
-          payload.userId || payload.userID || payload.sub || payload.id || payload.user_id
-      }
-
       toast.add({
         title: '登录成功',
         color: 'success'
       })
 
-      await fetchUserProfile()
+      const success = await fetchUserProfile()
+      if (success && user.value) {
+        userID.value = user.value.userID
+      }
+
       return true
     } catch (error) {
       handleError('登录失败', error)

@@ -76,9 +76,9 @@
 
 ### 流式通信
 
-- `utils/sse.ts` 统一管理基于 Fetch 与 EventSource 的 SSE 订阅
-- 异步队列缓冲分片，确保 AI 消息严格按顺序渲染
-- 连接异常、超时、用户中止时主动结束流并抛出友好错误
+- `utils/sse.ts` 使用 async generator 处理后端 JSON 流
+- 直接解析连续的 JSON 对象流（`{"content":"a"}{"content":"b"}`）
+- 支持分片传输、不完整 JSON 缓冲和错误处理
 
 ### 统一 API 代理
 

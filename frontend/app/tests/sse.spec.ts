@@ -17,13 +17,12 @@ describe('sse', () => {
   })
 
   describe('ssePost', () => {
-    it('应该能处理正常的 SSE 响应流', async () => {
-      // 模拟一个返回 SSE 数据的响应
+    it('应该能处理连续的 JSON 对象流', async () => {
+      // 模拟后端返回的连续 JSON 流
       const mockStream = new ReadableStream({
         start(controller) {
-          controller.enqueue(new TextEncoder().encode('data: {"message": "hello"}\n\n'))
-          controller.enqueue(new TextEncoder().encode('data: {"message": "world"}\n\n'))
-          controller.enqueue(new TextEncoder().encode('event: close\n\n'))
+          controller.enqueue(new TextEncoder().encode('{"message":"hello"}'))
+          controller.enqueue(new TextEncoder().encode('{"message":"world"}'))
           controller.close()
         }
       })
@@ -36,7 +35,7 @@ describe('sse', () => {
       const { ssePost } = await import('~/utils/sse')
       const controller = new AbortController()
 
-      const generator = await ssePost<{ message: string }>('/api/test', {
+      const generator = ssePost<{ message: string }>('/api/test', {
         params: { test: 'value' },
         signal: controller.signal
       })
@@ -61,12 +60,21 @@ describe('sse', () => {
       const { ssePost } = await import('~/utils/sse')
       const controller = new AbortController()
 
-      await expect(
-        ssePost('/api/test', {
+      let errorThrown = false
+      try {
+        const generator = ssePost('/api/test', {
           params: {},
           signal: controller.signal
         })
-      ).rejects.toThrow('Server Error')
+        for await (const _ of generator) {
+          // 迭代
+        }
+      } catch (error: unknown) {
+        errorThrown = true
+        expect(error).toBeInstanceOf(Error)
+        expect((error as Error).message).toBe('Server Error')
+      }
+      expect(errorThrown).toBe(true)
     })
 
     it('应该在响应体为空时抛出错误', async () => {
@@ -78,23 +86,27 @@ describe('sse', () => {
       const { ssePost } = await import('~/utils/sse')
       const controller = new AbortController()
 
-      const generator = await ssePost('/api/test', {
-        params: {},
-        signal: controller.signal
-      })
-
-      // 应该在迭代时抛出错误
-      await expect(async () => {
+      let errorThrown = false
+      try {
+        const generator = ssePost('/api/test', {
+          params: {},
+          signal: controller.signal
+        })
         for await (const _ of generator) {
           // 迭代
         }
-      }).rejects.toThrow('No response body')
+      } catch (error: unknown) {
+        errorThrown = true
+        expect(error).toBeInstanceOf(Error)
+        expect((error as Error).message).toBe('No response body')
+      }
+      expect(errorThrown).toBe(true)
     })
 
     it('应该使用 POST 方法发送请求', async () => {
       const mockStream = new ReadableStream({
         start(controller) {
-          controller.enqueue(new TextEncoder().encode('event: close\n\n'))
+          controller.enqueue(new TextEncoder().encode('{"test":"value"}'))
           controller.close()
         }
       })
@@ -107,10 +119,15 @@ describe('sse', () => {
       const { ssePost } = await import('~/utils/sse')
       const controller = new AbortController()
 
-      await ssePost('/api/test', {
+      const generator = ssePost('/api/test', {
         params: { key: 'value' },
         signal: controller.signal
       })
+
+      // 消费 generator
+      for await (const _ of generator) {
+        // 迭代
+      }
 
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/test',
@@ -124,7 +141,7 @@ describe('sse', () => {
     it('应该设置 Content-Type 请求头', async () => {
       const mockStream = new ReadableStream({
         start(controller) {
-          controller.enqueue(new TextEncoder().encode('event: close\n\n'))
+          controller.enqueue(new TextEncoder().encode('{"done":true}'))
           controller.close()
         }
       })
@@ -137,10 +154,15 @@ describe('sse', () => {
       const { ssePost } = await import('~/utils/sse')
       const controller = new AbortController()
 
-      await ssePost('/api/test', {
+      const generator = ssePost('/api/test', {
         params: {},
         signal: controller.signal
       })
+
+      // 消费 generator
+      for await (const _ of generator) {
+        // 迭代
+      }
 
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/test',
@@ -156,7 +178,6 @@ describe('sse', () => {
       const mockStream = new ReadableStream({
         start(controller) {
           controller.enqueue(new TextEncoder().encode('{"message":"first"}{"message":"second"}'))
-          controller.enqueue(new TextEncoder().encode('event:close\n\n'))
           controller.close()
         }
       })
@@ -169,7 +190,7 @@ describe('sse', () => {
       const { ssePost } = await import('~/utils/sse')
       const controller = new AbortController()
 
-      const generator = await ssePost<{ message: string }>('/api/test', {
+      const generator = ssePost<{ message: string }>('/api/test', {
         params: {},
         signal: controller.signal
       })
@@ -187,8 +208,7 @@ describe('sse', () => {
     it('应该处理包含空格的数据流', async () => {
       const mockStream = new ReadableStream({
         start(controller) {
-          controller.enqueue(new TextEncoder().encode('  data: {"value":1}  \n\n'))
-          controller.enqueue(new TextEncoder().encode('event: close\n\n'))
+          controller.enqueue(new TextEncoder().encode('  {"value":1}  '))
           controller.close()
         }
       })
@@ -201,7 +221,7 @@ describe('sse', () => {
       const { ssePost } = await import('~/utils/sse')
       const controller = new AbortController()
 
-      const generator = await ssePost<{ value: number }>('/api/test', {
+      const generator = ssePost<{ value: number }>('/api/test', {
         params: {},
         signal: controller.signal
       })
@@ -219,7 +239,6 @@ describe('sse', () => {
       const mockStream = new ReadableStream({
         start(controller) {
           controller.enqueue(new TextEncoder().encode('{"text":"hello \\"world\\""}'))
-          controller.enqueue(new TextEncoder().encode('event: close\n\n'))
           controller.close()
         }
       })
@@ -232,7 +251,7 @@ describe('sse', () => {
       const { ssePost } = await import('~/utils/sse')
       const controller = new AbortController()
 
-      const generator = await ssePost<{ text: string }>('/api/test', {
+      const generator = ssePost<{ text: string }>('/api/test', {
         params: {},
         signal: controller.signal
       })
@@ -251,7 +270,6 @@ describe('sse', () => {
         start(controller) {
           controller.enqueue(new TextEncoder().encode('{"incomplete":'))
           controller.enqueue(new TextEncoder().encode('"value"}'))
-          controller.enqueue(new TextEncoder().encode('event: close\n\n'))
           controller.close()
         }
       })
@@ -264,7 +282,7 @@ describe('sse', () => {
       const { ssePost } = await import('~/utils/sse')
       const controller = new AbortController()
 
-      const generator = await ssePost<{ incomplete: string }>('/api/test', {
+      const generator = ssePost<{ incomplete: string }>('/api/test', {
         params: {},
         signal: controller.signal
       })
@@ -282,7 +300,6 @@ describe('sse', () => {
       const mockStream = new ReadableStream({
         start(controller) {
           controller.enqueue(new TextEncoder().encode('{invalid}{"valid":true}'))
-          controller.enqueue(new TextEncoder().encode('event: close\n\n'))
           controller.close()
         }
       })
@@ -295,7 +312,7 @@ describe('sse', () => {
       const { ssePost } = await import('~/utils/sse')
       const controller = new AbortController()
 
-      const generator = await ssePost<{ valid: boolean }>('/api/test', {
+      const generator = ssePost<{ valid: boolean }>('/api/test', {
         params: {},
         signal: controller.signal
       })
@@ -309,11 +326,11 @@ describe('sse', () => {
       expect(results[0]?.valid).toBe(true)
     })
 
-    it('应该处理 \\r\\n 换行符', async () => {
+    it('应该处理包含换行的 JSON 流', async () => {
       const mockStream = new ReadableStream({
         start(controller) {
-          controller.enqueue(new TextEncoder().encode('data: {"test":1}\r\n\r\n'))
-          controller.enqueue(new TextEncoder().encode('event: close\r\n\r\n'))
+          controller.enqueue(new TextEncoder().encode('{"test":1}\n'))
+          controller.enqueue(new TextEncoder().encode('{"test":2}'))
           controller.close()
         }
       })
@@ -326,7 +343,7 @@ describe('sse', () => {
       const { ssePost } = await import('~/utils/sse')
       const controller = new AbortController()
 
-      const generator = await ssePost<{ test: number }>('/api/test', {
+      const generator = ssePost<{ test: number }>('/api/test', {
         params: {},
         signal: controller.signal
       })
@@ -336,8 +353,9 @@ describe('sse', () => {
         results.push(item)
       }
 
-      expect(results).toHaveLength(1)
+      expect(results).toHaveLength(2)
       expect(results[0]?.test).toBe(1)
+      expect(results[1]?.test).toBe(2)
     })
   })
 })

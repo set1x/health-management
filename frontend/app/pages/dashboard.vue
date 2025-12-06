@@ -39,9 +39,12 @@ const healthGoals = reactive({
   dailySleepHours: null as number | null
 })
 
-const loadWeightData = async () => {
-  if (!import.meta.client || !userIDCookie.value) return
+const isLoadingWeight = ref(false)
 
+const loadWeightData = async () => {
+  if (!import.meta.client || !userIDCookie.value || isLoadingWeight.value) return
+
+  isLoadingWeight.value = true
   try {
     const days = parseDaysFromPeriod(weightTimePeriod.value)
     const { startDate, endDate } = getDateRangeByDays(days)
@@ -62,12 +65,17 @@ const loadWeightData = async () => {
   } catch {
     toast.add({ title: '加载体重数据失败', color: 'error' })
     weightData.value = []
+  } finally {
+    isLoadingWeight.value = false
   }
 }
 
-const loadCaloriesData = async () => {
-  if (!import.meta.client || !userIDCookie.value) return
+const isLoadingCalories = ref(false)
 
+const loadCaloriesData = async () => {
+  if (!import.meta.client || !userIDCookie.value || isLoadingCalories.value) return
+
+  isLoadingCalories.value = true
   try {
     const days = parseDaysFromPeriod(caloriesTimePeriod.value)
     const { startDate, endDate } = getDateRangeByDays(days)
@@ -113,6 +121,8 @@ const loadCaloriesData = async () => {
   } catch {
     toast.add({ title: '加载卡路里数据失败', color: 'error' })
     caloriesData.value = []
+  } finally {
+    isLoadingCalories.value = false
   }
 }
 
@@ -132,14 +142,18 @@ const loadHealthGoals = () => {
   }
 }
 
-const refreshData = async () => {
-  if (!import.meta.client || !userIDCookie.value) return
+const isRefreshing = ref(false)
 
+const refreshData = async () => {
+  if (!import.meta.client || !userIDCookie.value || isRefreshing.value) return
+
+  isRefreshing.value = true
   try {
     const today = new Date().toISOString().split('T')[0]
     const userID = userIDCookie.value
     const todayParams = { userID, startDate: today, endDate: today, page: 1, pageSize: 1000 }
 
+    // 分批加载：先加载统计数据
     const [bodyResponse, dietResponse, exerciseResponse, sleepResponse] = await Promise.all([
       $fetch<{ code: number; data: { rows: Array<{ weightKG: number }> } }>('/api/body-metrics', {
         params: { userID, page: 1, pageSize: 1 },
@@ -176,9 +190,24 @@ const refreshData = async () => {
       }, 0) || 0
     statistics.totalSleepHours = sleepMinutes / 60
 
-    await Promise.all([loadWeightData(), loadCaloriesData()])
+    // 统计卡片渲染后，使用 requestIdleCallback 在空闲时加载图表数据
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(
+        () => {
+          Promise.all([loadWeightData(), loadCaloriesData()])
+        },
+        { timeout: 2000 }
+      )
+    } else {
+      // 降级方案：延迟加载
+      setTimeout(() => {
+        Promise.all([loadWeightData(), loadCaloriesData()])
+      }, 100)
+    }
   } catch {
     toast.add({ title: '加载数据失败', color: 'error' })
+  } finally {
+    isRefreshing.value = false
   }
 }
 
