@@ -22,12 +22,12 @@ public class SleepServiceImpl implements SleepService {
   }
 
   @Override
-  public PageBean page(
+  public PageBean<Sleep> page(
       Integer page, Integer pageSize, String userID, LocalDate startDate, LocalDate endDate) {
     PageHelper.startPage(page, pageSize);
     List<Sleep> sleepList = sleepMapper.list(userID, startDate, endDate);
     Page<Sleep> sleepPage = (Page<Sleep>) sleepList;
-    return new PageBean(sleepPage.getTotal(), sleepPage.getResult());
+    return new PageBean<>(sleepPage.getTotal(), sleepPage.getResult());
   }
 
   @Override

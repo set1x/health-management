@@ -22,7 +22,7 @@ public class DietServiceImpl implements DietService {
   }
 
   @Override
-  public PageBean page(
+  public PageBean<Diet> page(
       Integer page,
       Integer pageSize,
       String userID,
@@ -32,8 +32,7 @@ public class DietServiceImpl implements DietService {
     PageHelper.startPage(page, pageSize);
     List<Diet> dietList = dietMapper.list(userID, startDate, endDate, mealType);
     Page<Diet> dietPage = (Page<Diet>) dietList;
-    PageBean pageBean = new PageBean(dietPage.getTotal(), dietPage.getResult());
-    return pageBean;
+    return new PageBean<>(dietPage.getTotal(), dietPage.getResult());
   }
 
   @Override

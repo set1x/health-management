@@ -32,6 +32,16 @@
 
   当无数据时 `rows` 为空数组、`total = 0`
 
+## `GET /body-metrics/export`
+
+导出分页范围内的身体数据为 CSV
+
+- **查询参数**：同 `GET /body-metrics`
+- **成功响应**：
+  - Content-Type: `text/csv`
+  - Content-Disposition: `attachment; filename="body-metrics.csv"`
+  - Body: CSV 格式文本
+
 ## `GET /body-metrics/{bodyMetricID}`
 
 按 ID 查询单条记录

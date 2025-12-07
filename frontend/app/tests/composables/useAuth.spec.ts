@@ -1,11 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mockNuxtImport } from '@nuxt/test-utils/runtime'
 
-// Mock $fetch
 const mockFetch = vi.fn()
 vi.stubGlobal('$fetch', mockFetch)
 
-// Mock useToast
 const mockToastAdd = vi.fn()
 mockNuxtImport('useToast', () => {
   return () => ({
@@ -35,17 +33,14 @@ describe('useAuth', () => {
         data: 'mock-jwt-token.eyJ1c2VySWQiOiIxMjMifQ.signature'
       })
 
-      // Mock fetchUserProfile
       mockFetch.mockResolvedValueOnce({
         code: 1,
         data: { id: '123', email: 'test@example.com' }
       })
 
-      // Mock HEAD request for avatar check
       mockFetch.mockResolvedValueOnce({})
 
       const { login } = useAuth()
-
       const result = await login({ email: 'test@example.com', password: '123456' })
 
       expect(result).toBe(true)
@@ -62,7 +57,6 @@ describe('useAuth', () => {
       })
 
       const { login } = useAuth()
-
       const result = await login({ email: 'test@example.com', password: 'wrong' })
 
       expect(result).toBe(false)
@@ -180,7 +174,6 @@ describe('useAuth', () => {
       })
 
       const { updateProfile } = useAuth()
-
       const result = await updateProfile({ nickname: '新昵称' })
 
       expect(result).toBe(true)
@@ -226,7 +219,6 @@ describe('useAuth', () => {
       })
 
       const { fetchUserProfile, user } = useAuth()
-
       const result = await fetchUserProfile()
 
       expect(result).toBe(true)
@@ -239,7 +231,6 @@ describe('useAuth', () => {
       })
 
       const { fetchUserProfile, isLoggedIn } = useAuth()
-
       const result = await fetchUserProfile()
 
       expect(result).toBe(false)

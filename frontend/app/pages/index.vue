@@ -1,14 +1,11 @@
 <script setup lang="ts">
-onMounted(() => {
-  if (import.meta.client) {
-    const token = useCookie('token')
-    const userID = useCookie('userID')
+const token = useCookie('token')
+const userID = useCookie('userID')
 
-    if (token.value && userID.value) {
-      navigateTo('/dashboard', { replace: true })
-    }
-  }
-})
+// SSR 阶段就重定向，减少客户端工作
+if (token.value && userID.value) {
+  await navigateTo('/dashboard', { replace: true, redirectCode: 302 })
+}
 </script>
 
 <template>

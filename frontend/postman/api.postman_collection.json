@@ -1151,6 +1151,72 @@
             }
           ],
           "response": []
+        },
+        {
+          "name": "Export Body Metrics to CSV",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/body-metrics/export?page=1&pageSize=10&userID={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["body-metrics", "export"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                },
+                {
+                  "key": "userID",
+                  "value": "{{userId}}"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01",
+                  "disabled": true
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const contentDisposition = pm.response.headers.get('Content-Disposition');",
+                  "pm.test('Content-Disposition header present', function () {",
+                  "  pm.expect(contentDisposition).to.include('attachment');",
+                  "  pm.expect(contentDisposition).to.include('body-metrics.csv');",
+                  "});",
+                  "const contentType = pm.response.headers.get('Content-Type');",
+                  "pm.test('CSV content type', function () {",
+                  "  pm.expect(contentType).to.include('text/csv');",
+                  "});",
+                  "const body = pm.response.text();",
+                  "pm.test('CSV content has headers', function () {",
+                  "  pm.expect(body).to.include('ID');",
+                  "  pm.expect(body).to.include('User ID');",
+                  "  pm.expect(body).to.include('Height');",
+                  "  pm.expect(body).to.include('Weight');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
         }
       ]
     },
@@ -1494,6 +1560,77 @@
             }
           ],
           "response": []
+        },
+        {
+          "name": "Export Diet Records to CSV",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/diet-items/export?page=1&pageSize=10&userID={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["diet-items", "export"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                },
+                {
+                  "key": "userID",
+                  "value": "{{userId}}"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01",
+                  "disabled": true
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31",
+                  "disabled": true
+                },
+                {
+                  "key": "mealType",
+                  "value": "Breakfast",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const contentDisposition = pm.response.headers.get('Content-Disposition');",
+                  "pm.test('Content-Disposition header present', function () {",
+                  "  pm.expect(contentDisposition).to.include('attachment');",
+                  "  pm.expect(contentDisposition).to.include('diet-items.csv');",
+                  "});",
+                  "const contentType = pm.response.headers.get('Content-Type');",
+                  "pm.test('CSV content type', function () {",
+                  "  pm.expect(contentType).to.include('text/csv');",
+                  "});",
+                  "const body = pm.response.text();",
+                  "pm.test('CSV content has headers', function () {",
+                  "  pm.expect(body).to.include('ID');",
+                  "  pm.expect(body).to.include('User ID');",
+                  "  pm.expect(body).to.include('Food Name');",
+                  "  pm.expect(body).to.include('Meal Type');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
         }
       ]
     },
@@ -1832,6 +1969,77 @@
                   "  });",
                   "  pm.environment.unset('exerciseItemId');",
                   "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Export Exercise Records to CSV",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/exercise-items/export?page=1&pageSize=10&userID={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["exercise-items", "export"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                },
+                {
+                  "key": "userID",
+                  "value": "{{userId}}"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01",
+                  "disabled": true
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31",
+                  "disabled": true
+                },
+                {
+                  "key": "exerciseType",
+                  "value": "Running",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const contentDisposition = pm.response.headers.get('Content-Disposition');",
+                  "pm.test('Content-Disposition header present', function () {",
+                  "  pm.expect(contentDisposition).to.include('attachment');",
+                  "  pm.expect(contentDisposition).to.include('exercise-items.csv');",
+                  "});",
+                  "const contentType = pm.response.headers.get('Content-Type');",
+                  "pm.test('CSV content type', function () {",
+                  "  pm.expect(contentType).to.include('text/csv');",
+                  "});",
+                  "const body = pm.response.text();",
+                  "pm.test('CSV content has headers', function () {",
+                  "  pm.expect(body).to.include('ID');",
+                  "  pm.expect(body).to.include('User ID');",
+                  "  pm.expect(body).to.include('Exercise Type');",
+                  "  pm.expect(body).to.include('Duration');",
+                  "});"
                 ]
               }
             }
@@ -2208,6 +2416,72 @@
                   "  });",
                   "  pm.environment.unset('sleepItemId');",
                   "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Export Sleep Records to CSV",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/sleep-items/export?page=1&pageSize=10&userID={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["sleep-items", "export"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                },
+                {
+                  "key": "userID",
+                  "value": "{{userId}}"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01",
+                  "disabled": true
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const contentDisposition = pm.response.headers.get('Content-Disposition');",
+                  "pm.test('Content-Disposition header present', function () {",
+                  "  pm.expect(contentDisposition).to.include('attachment');",
+                  "  pm.expect(contentDisposition).to.include('sleep-items.csv');",
+                  "});",
+                  "const contentType = pm.response.headers.get('Content-Type');",
+                  "pm.test('CSV content type', function () {",
+                  "  pm.expect(contentType).to.include('text/csv');",
+                  "});",
+                  "const body = pm.response.text();",
+                  "pm.test('CSV content has headers', function () {",
+                  "  pm.expect(body).to.include('ID');",
+                  "  pm.expect(body).to.include('User ID');",
+                  "  pm.expect(body).to.include('Bed Time');",
+                  "  pm.expect(body).to.include('Wake Time');",
+                  "});"
                 ]
               }
             }

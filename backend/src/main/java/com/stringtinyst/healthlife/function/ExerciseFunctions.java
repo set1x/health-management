@@ -343,7 +343,7 @@ public class ExerciseFunctions extends BaseHealthFunctionModule {
 
   private Double getUserLatestWeight(String userID) {
     try {
-      PageBean pageBean = bodyService.page(1, 1, userID, null, null);
+      PageBean<Body> pageBean = bodyService.page(1, 1, userID, null, null);
       if (pageBean.getRows() != null && !pageBean.getRows().isEmpty()) {
         Object firstRow = pageBean.getRows().get(0);
         if (firstRow instanceof Body body) {

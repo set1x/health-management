@@ -7,7 +7,7 @@ import java.time.LocalDate;
 public interface SleepService {
   void addSleep(Sleep sleep);
 
-  PageBean page(
+  PageBean<Sleep> page(
       Integer page, Integer pageSize, String userID, LocalDate startDate, LocalDate endDate);
 
   Sleep getBySleepItemID(int sleepItemID);

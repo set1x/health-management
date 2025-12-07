@@ -21,9 +21,13 @@ export const useAvatar = () => {
 
     checkingPromise = (async () => {
       try {
-        await $fetch('/api/user/avatar', { method: 'HEAD' })
-        avatarExists.value = true
-        return true
+        const response = await $fetch.raw('/api/user/avatar', {
+          method: 'HEAD',
+          ignoreResponseError: true
+        })
+        const exists = response.status === 200
+        avatarExists.value = exists
+        return exists
       } catch {
         avatarExists.value = false
         return false

@@ -21,13 +21,25 @@ const pageInfo = reactive({
 })
 
 const dateRange = shallowRef<{ start: DateValue; end: DateValue } | null>(null)
-const healthGoals = reactive({ dailySleepHours: null as number | null })
 
-const loadHealthGoals = () => {
-  if (!import.meta.client) return
-  const saved = localStorage.getItem('healthGoals')
-  if (saved) healthGoals.dailySleepHours = JSON.parse(saved).dailySleepHours
+// 使用 useCookie 读取健康目标
+interface HealthGoals {
+  targetWeight: number | null
+  dailyCaloriesIntake: number | null
+  dailyCaloriesBurn: number | null
+  dailySleepHours: number | null
 }
+
+const healthGoalsCookie = useCookie<HealthGoals>('healthGoals', {
+  default: () => ({
+    targetWeight: 70,
+    dailyCaloriesIntake: 2000,
+    dailyCaloriesBurn: 2000,
+    dailySleepHours: 8
+  })
+})
+
+const healthGoals = computed(() => healthGoalsCookie.value)
 
 const getSleepDurationMinutes = (record: SleepRecord): number => {
   if (!record.bedTime || !record.wakeTime) return 0
@@ -286,8 +298,24 @@ const handlePageChange = (page: number) => {
   loadData()
 }
 
+const handleFilterChange = () => {
+  pageInfo.current = 1
+  loadData()
+}
+
+const { exportData: exportCSV } = useExport()
+
+const exportData = async () => {
+  await exportCSV({
+    endpoint: '/api/sleep-items/export',
+    filename: 'sleep-items.csv',
+    page: pageInfo.current,
+    pageSize: pageInfo.size,
+    dateRange: dateRange.value
+  })
+}
+
 onMounted(() => {
-  loadHealthGoals()
   loadData()
   loadTodayData()
 })
@@ -354,8 +382,27 @@ onMounted(() => {
               range
               icon="heroicons:calendar"
               class="w-full"
-              @update:model-value="loadData"
             />
+          </div>
+
+          <!-- 查询按钮 -->
+          <div class="flex items-end">
+            <UButton color="primary" @click="handleFilterChange">
+              <template #leading>
+                <UIcon name="heroicons:magnifying-glass" />
+              </template>
+              查询
+            </UButton>
+          </div>
+
+          <!-- 导出按钮 -->
+          <div class="flex items-end">
+            <UButton color="success" variant="outline" @click="exportData">
+              <template #leading>
+                <UIcon name="heroicons:arrow-down-tray" />
+              </template>
+              导出 CSV
+            </UButton>
           </div>
 
           <!-- 重置按钮 -->
@@ -395,10 +442,10 @@ onMounted(() => {
         <template #footer>
           <div class="flex items-center justify-center border-t pt-4">
             <UPagination
-              v-model:page="pageInfo.current"
+              :model-value="pageInfo.current"
               :total="pageInfo.total"
               :items-per-page="pageInfo.size"
-              @update:page="handlePageChange"
+              @update:model-value="handlePageChange"
             />
           </div>
         </template>
