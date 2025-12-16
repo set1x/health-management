@@ -6,8 +6,8 @@ import com.stringtinyst.healthlife.service.UserService;
 import com.stringtinyst.healthlife.utils.PasswordEncoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-/** User service implementation */
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -19,7 +19,7 @@ public class UserServiceImpl implements UserService {
     // 检查 Email 是否已存在
     int count = usersMapper.countByEmail(user.getEmail());
     if (count > 0) {
-      return false; // Email 已存在，返回 false
+      return false;
     }
 
     // 对密码进行加密存储
@@ -28,7 +28,7 @@ public class UserServiceImpl implements UserService {
 
     // 插入用户数据
     int result = usersMapper.insertUser(user);
-    return result > 0; // 插入成功返回 true，否则返回 false
+    return result > 0;
   }
 
   @Override
@@ -36,17 +36,17 @@ public class UserServiceImpl implements UserService {
     // 根据邮箱查询用户
     User dbUser = usersMapper.getByEmail(user.getEmail());
     if (dbUser == null) {
-      throw new RuntimeException("USER_NOT_FOUND"); // 用户不存在
+      throw new RuntimeException("USER_NOT_FOUND");
     }
 
     // 验证密码
     boolean passwordMatches =
         PasswordEncoder.matches(user.getPasswordHash(), dbUser.getPasswordHash());
     if (!passwordMatches) {
-      throw new RuntimeException("PASSWORD_INCORRECT"); // 密码不匹配
+      throw new RuntimeException("PASSWORD_INCORRECT");
     }
 
-    return dbUser.getUserID(); // 返回用户 ID
+    return dbUser.getUserID();
   }
 
   @Override
@@ -57,5 +57,15 @@ public class UserServiceImpl implements UserService {
   @Override
   public boolean updateUser(User user) {
     return usersMapper.updateUser(user) > 0;
+  }
+
+  @Override
+  public boolean resetPassword(String nickname, String email, String newPassword) {
+    if (!StringUtils.hasText(newPassword)) {
+      throw new IllegalArgumentException("新密码不能为空");
+    }
+
+    String encodedPassword = PasswordEncoder.encode(newPassword);
+    return usersMapper.updatePasswordByNicknameAndEmail(nickname, email, encodedPassword) > 0;
   }
 }

@@ -10,7 +10,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** Exercise item entity */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

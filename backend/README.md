@@ -17,12 +17,17 @@
 
 - **JWT (JJWT 0.9.1)** - JSON Web Token 身份认证
 - **自定义拦截器** - 请求认证与授权
+- **密码重置** - `POST /auth/password/reset` 验证昵称与邮箱匹配即可重置密码
 
 ### AI 集成
 
-- **Spring AI Alibaba 1.0.0-M5.1** - 阿里云通义千问 AI 服务
+- **Spring AI OpenAI 1.0.0-M5** - OpenAI 兼容接口
 - **CommonMark 0.20.0** - Markdown 解析器
 - **Spring WebFlux** - SSE 流式响应支持
+- **OkHttp 4.12.0** - 联网搜索 HTTP 客户端
+- **Spring AI Function Calling** - `BodyFunctions`、`SleepFunctions`、`DietFunctions`、`ExerciseFunctions`、`WebSearchFunction` 用于模型自动操作数据库和联网搜索
+- **动态系统提示** - `AiPromptTemplate` 每次请求实时注入服务器日期与时间，指导模型统一使用服务端日期
+- **FunctionResultCache** - 轻量缓存函数结果，避免模型在同一轮对话中重复触发查询
 
 ### 开发工具
 
@@ -32,6 +37,7 @@
 - **Spring Boot DevTools** - 开发热重载
 - **Spring Boot Actuator** - 健康检查端点
 - **Spotless 7.0.3** - 代码格式化工具
+- **Apache Commons CSV 1.10.0** - CSV 数据导出工具
 
 ## 项目结构
 
@@ -46,6 +52,7 @@ backend/
 │   │   │   │   ├── ChatController.java
 │   │   │   │   ├── DietController.java
 │   │   │   │   ├── ExerController.java
+│   │   │   │   ├── GlobalExceptionHandler.java
 │   │   │   │   ├── SleepController.java
 │   │   │   │   ├── UploadController.java
 │   │   │   │   ├── UserController.java
@@ -54,7 +61,14 @@ backend/
 │   │   │   │   ├── BodyService.java
 │   │   │   │   ├── DietService.java
 │   │   │   │   ├── ExerService.java
-│   │   │   │   └── SleepService.java
+│   │   │   │   ├── SleepService.java
+│   │   │   │   ├── UserService.java
+│   │   │   │   └── impl/
+│   │   │   │       ├── BodyServiceImpl.java
+│   │   │   │       ├── DietServiceImpl.java
+│   │   │   │       ├── ExerServiceImpl.java
+│   │   │   │       ├── SleepServiceImpl.java
+│   │   │   │       └── UserServiceImpl.java
 │   │   │   ├── mapper/                       # MyBatis 映射器
 │   │   │   │   ├── BodyMapper.java
 │   │   │   │   ├── DietMapper.java
@@ -67,14 +81,27 @@ backend/
 │   │   │   │   ├── Exer.java
 │   │   │   │   ├── Sleep.java
 │   │   │   │   ├── User.java
-│   │   │   │   ├── Result.java              # 统一响应格式
-│   │   │   │   └── PageBean.java            # 分页对象
+│   │   │   │   ├── PasswordResetRequest.java # 密码重置请求体
+│   │   │   │   ├── Result.java               # 统一响应格式
+│   │   │   │   └── PageBean.java             # 分页对象
 │   │   │   ├── interceptor/                  # 拦截器
 │   │   │   │   └── LoginCheckInterceptor.java
 │   │   │   ├── config/                       # 配置类
 │   │   │   │   ├── AiConfig.java
+│   │   │   │   ├── AiPromptTemplate.java
 │   │   │   │   └── WebConfig.java
+│   │   │   ├── function/                     # Spring AI Function 定义
+│   │   │   │   ├── BaseHealthFunctionModule.java
+│   │   │   │   ├── BodyFunctions.java
+│   │   │   │   ├── DietFunctions.java
+│   │   │   │   ├── ExerciseFunctions.java
+│   │   │   │   ├── SleepFunctions.java
+│   │   │   │   └── WebSearchFunction.java
 │   │   │   └── utils/                        # 工具类
+│   │   │       ├── FunctionResultCache.java  # AI 函数结果缓存
+│   │   │       ├── JwtUtils.java             # JWT 解析/生成
+│   │   │       ├── PasswordEncoder.java      # 密码加密工具
+│   │   │       └── UserChatSessionManager.java
 │   │   └── resources/
 │   │       ├── application.properties        # 开发环境配置
 │   │       ├── application-prod.properties   # 生产环境配置
@@ -98,13 +125,7 @@ backend/
 
 - Java 17+
 - Gradle 8.12+
-- MySQL 8.0+
-
-### 安装依赖
-
-```bash
-./gradlew build -x test
-```
+- MySQL 9.0+
 
 ### 环境变量配置
 
@@ -115,16 +136,6 @@ backend/
 ```bash
 cd backend
 export $(grep -v '^#' .env | xargs)
-```
-
-### 数据库初始化
-
-```bash
-# 方式 1：手动导入
-mysql -u root -p < init.sql
-
-# 方式 2：使用 Docker Compose
-docker-compose up -d mysql
 ```
 
 ### 开发环境启动
@@ -147,6 +158,12 @@ docker-compose up -d mysql
 ./gradlew build -x test
 ```
 
+> 测试说明
+>
+> - `test` Profile 会自动加载 `src/test/resources/application-test.properties`，使用 **H2** 内存数据库与 `schema.sql`、`data.sql`，CI 与本地无需依赖外部 MySQL
+> - MyBatis 切片测试（`@MybatisTest`）直接校验 Mapper SQL，Service 与拦截器/Controller 则通过 Mockito、`@WebMvcTest` 做行为验证
+> - AI、外呼等远程能力在测试 Profile 下默认关闭
+
 ### 代码格式化
 
 ```bash
@@ -160,66 +177,28 @@ docker-compose up -d mysql
 ### 构建部署
 
 ```bash
-# 构建 JAR 包
-./gradlew build
+# 构建生产用 JAR（本地执行）
+./gradlew clean bootJar
 
-# 运行 JAR
-java -jar build/libs/health-management-backend-0.0.1-SNAPSHOT.jar
-
-# 指定环境
+# 本地验证（默认走 application-prod 配置）
 java -jar build/libs/health-management-backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
 ```
+
+> 生产环境只需把 `./build/libs/` 下的 jar 文件与部署所需的 `Dockerfile`、`docker-compose.yml`、`.env` 拷贝到服务器即可
 
 ## Docker 部署
 
 ### 单独构建后端镜像
 
+> 先在本地执行 `./gradlew clean bootJar`，确保 `./build/libs/health-management-backend-*.jar` 已生成，再继续以下步骤
+
 ```bash
 # 构建镜像
 docker build -t health-management-backend:latest .
 
-# 运行容器（需要先启动 MySQL）
-docker run -d \
-  -p 8080:8080 \
-  -e SPRING_PROFILES_ACTIVE=prod \
-  -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/health_management_db \
-  -e SPRING_DATASOURCE_PASSWORD=your_password \
-  -e SPRING_AI_DASHSCOPE_API_KEY=your_api_key \
-  -e JWT_SIGN_KEY=your_jwt_key \
-  --name health-backend \
-  health-management-backend:latest
+# 使用 docker compose
+docker compose up -d --build
 ```
-
-> 镜像构建阶段会执行 `gradlew spotlessCheck`，若存在未格式化的 Java 文件，构建会直接失败
-
-### 使用 Docker Compose
-
-配置相关环境变量
-
-```bash
-# 启动所有服务
-docker-compose up -d
-
-# 查看日志
-docker-compose logs -f backend
-
-# 停止服务
-docker-compose down
-```
-
-### Docker Compose 服务说明
-
-- **mysql**: MySQL 9.0 数据库
-  - 端口：`3306`
-  - 自动执行 `init.sql` 初始化脚本
-  - 数据持久化到 `mysql_data` 卷
-  - 健康检查：每 10 秒检查一次
-
-- **backend**: Spring Boot 应用
-  - 端口：`8080`
-  - 依赖 MySQL 健康检查通过后启动
-  - 头像存储持久化到 `avatar_data` 卷
-  - 健康检查：通过 `/actuator/health` 端点
 
 ## 架构特性
 
@@ -261,11 +240,14 @@ docker-compose down
 
 ### AI 集成
 
-- 阿里云通义千问模型（`qwen-turbo`）
+- DeepSeek 思考模型（`deepseek-reasoner`）
 - SSE 流式响应
 - Markdown 格式化
 - 自动重试机制（最多 3 次）
-- 超时配置（连接 60s，读写 120s）
+- 流式超时限制：若 60 秒未收到模型输出将返回“AI 服务响应超时”提示
+- 内置函数：健康数据 CRUD（Body/Sleep/Diet/Exercise）与联网搜索 `webSearch`
+- 系统提示自动注入服务器日期与时间，模型默认以当天日期落库，无需额外函数
+- `FunctionResultCache` 避免模型在同一次对话中重复查询数据库或外部接口
 
 SSE 流式接口调试示例：
 
@@ -304,7 +286,7 @@ Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ### 核心接口
 
-- **用户认证**：`POST /auth/register`, `POST /auth/login`
+- **用户认证**：`POST /auth/register`, `POST /auth/login`, `POST /auth/password/reset`
 - **用户信息**：`GET /user/profile`, `PUT /user/profile`, `GET /user/{userID}`, `PUT /user/{userID}`
 - **文件上传**：`POST /user/avatar`，`GET /user/avatar`
 - **身体数据（Body Metrics）**：
@@ -336,25 +318,14 @@ Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 更多接口详情见项目根目录 `docs/api/overview.md` 及各模块 API 文档。
 
-## 环境变量说明（核心）
+## 环境变量说明
 
 - `SPRING_DATASOURCE_URL`：数据库连接串，默认 `jdbc:mysql://localhost:3306/health_management_db`
 - `SPRING_DATASOURCE_USERNAME`：数据库用户名，默认 `root`
 - `SPRING_DATASOURCE_PASSWORD`：数据库密码（必填）
 - `JWT_SIGN_KEY`：JWT 签名密钥（必填）
 - `JWT_EXPIRE_TIME`：JWT 过期时间（毫秒），默认 `43200000`（12 小时）
-- `SPRING_AI_DASHSCOPE_API_KEY`：通义千问 API Key（可选，仅启用 AI 时需要）
+- `DEEPSEEK_API_KEY`：DeepSeek API Key
+- `WEB_SEARCH_ENABLED` / `web.search.enabled`：是否允许模型调用联网搜索，默认 `true`
 - `SERVER_PORT`：服务端口，默认 `8080`
 - `AVATAR_UPLOAD_DIR`：头像上传目录，容器内默认 `/app/avatars`
-
-## 常见问题（FAQ）
-
-- Docker 拉取 MySQL 失败：如 `mysql:9.0` 不存在，建议将 `docker-compose.yml` 中镜像改为 `mysql:8.4` 或 `mysql:8.0`。
-- 返回未登录：确认前端按文档将 Token 放在 `Authorization: Bearer <JWT>` 或 `token` 头、或 Cookie `token`。
-- 启动报缺少密钥：确保设置了 `JWT_SIGN_KEY`，且与发放 Token 使用的密钥一致。
-- AI 请求超时：检查 `SPRING_AI_DASHSCOPE_API_KEY`，并确认网络可访问 DashScope。
-
-## 安全与依赖建议
-
-- 优先使用 Spring Boot 自带 Jackson 做 JSON 序列化，避免引入 Fastjson 历史安全风险；如需使用，请锁定安全版本并限制使用面。
-- 生产环境尽量避免使用里程碑/快照仓库依赖，优先选择稳定版。

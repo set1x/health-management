@@ -9,7 +9,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/** Convert validation errors into unified Result responses. */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

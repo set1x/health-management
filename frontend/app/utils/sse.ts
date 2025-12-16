@@ -1,5 +1,6 @@
 /**
  * SSE 流式请求工具
+ * 后端返回格式：连续的 JSON 对象流 {"content":"a"}{"content":"b"}
  */
 
 export interface SSEPostOptions {
@@ -8,184 +9,128 @@ export interface SSEPostOptions {
 }
 
 /**
- * 使用 fetch 发送 POST 请求处理 SSE 流
+ * 使用 fetch 发送 POST 请求处理 JSON 流
  */
-export async function ssePost<T>(path: string, options: SSEPostOptions) {
+export async function* ssePost<T>(path: string, options: SSEPostOptions): AsyncGenerator<T> {
   const { params, signal } = options
-
-  return new Promise<AsyncGenerator<T>>((resolve, reject) => {
-    let resolvers: PromiseWithResolvers<T | null>
-    let isStreamClosed = false
-    let hasResolved = false
-
-    const generator = async function* () {
-      while (true) {
-        resolvers = Promise.withResolvers<T | null>()
-        const result = await resolvers.promise
-        if (result === null) {
-          break
-        }
-        yield result
-      }
-    }
-
-    const token = useCookie('token').value
-
-    fetch(path, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify(params),
-      signal
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const text = (await res.text()) || res.statusText
-          throw new Error(text)
-        }
-        hasResolved = true
-        resolve(generator())
-        return res.body
-      })
-      .then(async (body) => {
-        if (!body) {
-          throw new Error('No response body')
-        }
-
-        const decoder = new TextDecoder()
-        const reader = body.getReader()
-
-        try {
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) {
-              isStreamClosed = true
-              resolvers?.resolve(null)
-              break
-            }
-
-            const lines = decoder
-              .decode(value, { stream: true })
-              .split('\n')
-              .map((line) => line.trim())
-              .filter(Boolean)
-
-            for (const line of lines) {
-              const colonIndex = line.indexOf(':')
-
-              if (colonIndex === -1) {
-                continue
-              }
-
-              let key = line.slice(0, colonIndex).trim()
-              let value = line.slice(colonIndex + 1).trim()
-
-              if (key === 'data') {
-                if (value.startsWith('data:')) {
-                  value = value.slice(5).trim()
-                } else if (value.startsWith('event:')) {
-                  key = 'event'
-                  value = value.slice(6).trim()
-                }
-              }
-
-              if (key === 'data' && value) {
-                try {
-                  const parsed = JSON.parse(value)
-                  resolvers?.resolve(parsed)
-                  resolvers = Promise.withResolvers<T | null>()
-                } catch {
-                  continue
-                }
-              }
-
-              if (key === 'event' && value === 'close') {
-                isStreamClosed = true
-                resolvers?.resolve(null)
-                reader.cancel()
-                return
-              }
-            }
-          }
-        } finally {
-          reader.releaseLock()
-        }
-      })
-      .catch((err) => {
-        if (!isStreamClosed) {
-          if (hasResolved) {
-            resolvers?.reject(err)
-          } else {
-            reject(err)
-          }
-        }
-      })
-  })
-}
-
-/**
- * 使用原生 EventSource 发送 GET 请求（适用于简单场景）
- */
-export interface SSEOptions {
-  params: Record<string, string>
-  signal: AbortSignal
-}
-
-export async function sse<T>(path: string, options: SSEOptions) {
-  const { params, signal } = options
-
   const token = useCookie('token').value
-  const search = new URLSearchParams({
-    ...params,
-    ...(token ? { token } : {})
+
+  const response = await fetch(path, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    },
+    body: JSON.stringify(params),
+    signal
   })
-  const url = `${path}?${search}`
 
-  return new Promise<AsyncGenerator<T>>((resolve, reject) => {
-    let resolvers: PromiseWithResolvers<T | null>
+  if (!response.ok) {
+    const text = (await response.text()) || response.statusText
+    throw new Error(text)
+  }
 
-    const generator = async function* () {
-      while (true) {
-        resolvers = Promise.withResolvers<T | null>()
-        const result = await resolvers.promise
-        if (result === null) {
+  if (!response.body) {
+    throw new Error('No response body')
+  }
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+
+      if (done) {
+        // 处理剩余 buffer
+        if (buffer.trim()) {
+          const jsonStart = buffer.indexOf('{')
+          if (jsonStart !== -1) {
+            try {
+              const parsed = JSON.parse(buffer.slice(jsonStart))
+              yield parsed
+            } catch {
+              // 忽略解析错误
+            }
+          }
+        }
+        break
+      }
+
+      buffer += decoder.decode(value, { stream: true })
+
+      // 解析所有完整的 JSON 对象
+      let searchStart = 0
+      while (searchStart < buffer.length) {
+        // 跳过空白字符
+        while (searchStart < buffer.length && /\s/.test(buffer[searchStart] ?? '')) {
+          searchStart++
+        }
+
+        if (searchStart >= buffer.length) break
+
+        // 查找 JSON 起始位置
+        const jsonStart = buffer.indexOf('{', searchStart)
+        if (jsonStart === -1) break
+
+        // 查找对应的结束位置
+        let braceCount = 0
+        let inString = false
+        let escaped = false
+        let jsonEnd = -1
+
+        for (let i = jsonStart; i < buffer.length; i++) {
+          const char = buffer[i]
+
+          if (escaped) {
+            escaped = false
+            continue
+          }
+
+          if (char === '\\' && inString) {
+            escaped = true
+            continue
+          }
+
+          if (char === '"') {
+            inString = !inString
+          } else if (!inString) {
+            if (char === '{') braceCount++
+            else if (char === '}') {
+              braceCount--
+              if (braceCount === 0) {
+                jsonEnd = i
+                break
+              }
+            }
+          }
+        }
+
+        // 如果没找到完整的 JSON，保留 buffer 等待更多数据
+        if (jsonEnd === -1) {
+          buffer = buffer.slice(jsonStart)
           break
         }
-        yield result
+
+        // 解析并输出 JSON
+        const jsonStr = buffer.slice(jsonStart, jsonEnd + 1)
+        try {
+          const parsed = JSON.parse(jsonStr)
+          yield parsed
+        } catch {
+          // 忽略解析错误
+        }
+
+        searchStart = jsonEnd + 1
+      }
+
+      // 清理已处理的数据
+      if (searchStart > 0) {
+        buffer = buffer.slice(searchStart)
       }
     }
-
-    const eventSource = new EventSource(url)
-
-    eventSource.onopen = () => {
-      resolve(generator())
-    }
-
-    eventSource.onerror = () => {
-      reject(new Error('EventSource connection error'))
-      eventSource.close()
-    }
-
-    eventSource.onmessage = (event) => {
-      if (!event.data) {
-        return
-      }
-      try {
-        resolvers?.resolve(JSON.parse(event.data))
-      } catch (err) {
-        resolvers?.reject(err)
-      }
-    }
-
-    eventSource.addEventListener('close', () => {
-      resolvers?.resolve(null)
-    })
-
-    signal.addEventListener('abort', () => {
-      eventSource.close()
-      resolvers?.reject(new Error('Aborted'))
-    })
-  })
+  } finally {
+    reader.releaseLock()
+  }
 }

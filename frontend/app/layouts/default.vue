@@ -1,148 +1,30 @@
-<template>
-  <UDashboardGroup>
-    <UDashboardSidebar
-      v-model:collapsed="isCollapsed"
-      collapsible
-      resizable
-      :default-size="20"
-      :min-size="15"
-      :max-size="30"
-      :collapsed-size="5"
-      :ui="{
-        root: 'transition-all duration-300 ease-in-out'
-      }"
-    >
-      <template #header="{ collapsed }">
-        <div class="flex items-center gap-3">
-          <UIcon name="mdi:heart-pulse" class="text-2xl text-primary" />
-          <Transition
-            enter-active-class="transition-opacity duration-300 delay-150 ease-out"
-            leave-active-class="transition-opacity duration-150 ease-in"
-            enter-from-class="opacity-0"
-            leave-to-class="opacity-0"
-            mode="out-in"
-          >
-            <h1 v-if="!collapsed" class="overflow-hidden text-lg font-bold whitespace-nowrap">
-              健康管理系统
-            </h1>
-          </Transition>
-        </div>
-      </template>
-
-      <template #default="{ collapsed }">
-        <div class="flex flex-1 flex-col overflow-hidden">
-          <UNavigationMenu :collapsed="collapsed" :items="menuItems" orientation="vertical" />
-
-          <div class="mt-auto border-t border-gray-200 pt-4 dark:border-gray-800">
-            <UDashboardSidebarCollapse />
-          </div>
-        </div>
-      </template>
-
-      <template #footer="{ collapsed }">
-        <ClientOnly>
-          <UDropdownMenu
-            :items="accountMenuItems"
-            :content="{ align: 'end', side: 'top', sideOffset: 8 }"
-          >
-            <UButton
-              :label="collapsed ? undefined : '账户操作'"
-              color="neutral"
-              variant="ghost"
-              block
-              trailing-icon="heroicons:chevron-up"
-            >
-              <template #leading>
-                <UAvatar
-                  :src="userInfo.avatarUrl || undefined"
-                  :alt="userInfo.user.nickname"
-                  size="xs"
-                  icon="heroicons:user"
-                />
-              </template>
-            </UButton>
-          </UDropdownMenu>
-        </ClientOnly>
-      </template>
-    </UDashboardSidebar>
-
-    <UDashboardPanel>
-      <template #body>
-        <slot />
-      </template>
-    </UDashboardPanel>
-
-    <!-- AI 助手悬浮按钮 (除了 chat 页面) -->
-    <UTooltip v-if="route.path !== '/chat'" text="AI 助手" :ui="{ content: 'z-[100]' }">
-      <UButton
-        icon="heroicons:sparkles"
-        color="primary"
-        size="xl"
-        class="fixed right-6 bottom-6 z-50 rounded-full shadow-lg"
-        @click="router.push('/chat')"
-      />
-    </UTooltip>
-  </UDashboardGroup>
-</template>
-
 <script setup lang="ts">
 import type { NavigationMenuItem, DropdownMenuItem } from '@nuxt/ui'
 
 const router = useRouter()
 const route = useRoute()
 const { user, logout } = useAuth()
-const tokenCookie = useCookie('token')
+const { getAvatarUrl } = useAvatar()
 
 const isCollapsed = ref(false)
+const isSidebarOpen = ref(false)
 
-// 使用全局共享的头像 URL 状态
-const sharedAvatarUrl = useState<string>('sharedAvatarUrl', () => {
-  if (import.meta.client) {
-    const timestamp = localStorage.getItem('avatarTimestamp')
-    if (timestamp && tokenCookie.value) {
-      return `/api/user/avatar?t=${timestamp}`
-    }
-  }
-  return ''
-})
+// 确保侧边栏状态在客户端正确初始化
+onMounted(() => {
+  if (!import.meta.client) return
 
-// 检查头像是否存在
-const checkAvatar = async () => {
-  if (!tokenCookie.value || !import.meta.client) return
+  const storedSize = localStorage.getItem('nuxt-ui-dashboard-sidebar-size')
+  if (!storedSize) return
 
   try {
-    // 使用 HEAD 请求检查头像是否存在，避免下载整个文件
-    await $fetch('/api/user/avatar', {
-      method: 'HEAD'
-    })
-
-    // 如果头像存在，设置时间戳，否则清除状态
-    const timestamp = localStorage.getItem('avatarTimestamp') || Date.now().toString()
-    localStorage.setItem('avatarTimestamp', timestamp)
-    sharedAvatarUrl.value = `/api/user/avatar?t=${timestamp}`
-  } catch {
-    localStorage.removeItem('avatarTimestamp')
-    sharedAvatarUrl.value = ''
-  }
-}
-
-// 监听 token 变化，确保头像 URL 被正确设置
-watch(
-  tokenCookie,
-  async (newToken) => {
-    if (newToken) {
-      await checkAvatar()
-    } else {
-      sharedAvatarUrl.value = ''
+    const size = parseFloat(storedSize)
+    if (size < 15 || size > 30 || (size > 16 && size < 16.7 && size !== 20)) {
+      localStorage.removeItem('nuxt-ui-dashboard-sidebar-size')
     }
-  },
-  { immediate: true }
-)
-
-const userInfo = computed(() => ({
-  user: user.value || { nickname: '用户' },
-  avatarUrl: sharedAvatarUrl.value
-}))
+  } catch {
+    localStorage.removeItem('nuxt-ui-dashboard-sidebar-size')
+  }
+})
 
 const menuItems = computed<NavigationMenuItem[]>(() => [
   {
@@ -184,14 +66,8 @@ const menuItems = computed<NavigationMenuItem[]>(() => [
 ])
 
 const handleLogout = async () => {
-  try {
-    logout()
-    await navigateTo('/login', { replace: true })
-  } catch (err: unknown) {
-    if (err && typeof err === 'object' && 'message' in err && 'stack' in err) {
-      throw err
-    }
-  }
+  logout()
+  await navigateTo('/login', { replace: true })
 }
 
 const accountMenuItems = computed<DropdownMenuItem[][]>(() => [
@@ -212,3 +88,99 @@ const accountMenuItems = computed<DropdownMenuItem[][]>(() => [
   ]
 ])
 </script>
+
+<template>
+  <UDashboardGroup>
+    <ClientOnly>
+      <UDashboardSidebar
+        v-model:collapsed="isCollapsed"
+        v-model:open="isSidebarOpen"
+        collapsible
+        resizable
+        :default-size="20"
+        :min-size="15"
+        :max-size="30"
+        :collapsed-size="5"
+      >
+        <template #header="{ collapsed }">
+          <div class="flex items-center gap-3">
+            <UIcon name="mdi:heart-pulse" class="text-2xl text-primary" />
+            <span v-if="!collapsed" class="overflow-hidden text-lg font-bold whitespace-nowrap">
+              健康管理系统
+            </span>
+          </div>
+        </template>
+
+        <template #default="{ collapsed }">
+          <div class="flex flex-1 flex-col overflow-hidden">
+            <div class="flex-1 overflow-y-auto">
+              <UNavigationMenu :collapsed="collapsed" :items="menuItems" orientation="vertical" />
+            </div>
+
+            <div
+              class="flex border-t border-gray-200 pt-4 dark:border-gray-800"
+              :class="{ 'flex justify-center': collapsed }"
+            >
+              <UDashboardSidebarCollapse />
+            </div>
+          </div>
+        </template>
+
+        <template #footer="{ collapsed }">
+          <ClientOnly>
+            <UDropdownMenu
+              :items="accountMenuItems"
+              :content="{ align: 'end', side: 'top', sideOffset: 8 }"
+            >
+              <UButton
+                :label="collapsed ? undefined : '账户操作'"
+                color="neutral"
+                variant="ghost"
+                block
+                :trailing-icon="collapsed ? undefined : 'heroicons:chevron-up'"
+                :class="{ 'justify-center': collapsed }"
+              >
+                <template #leading>
+                  <UAvatar
+                    v-bind="getAvatarUrl() ? { src: getAvatarUrl() } : {}"
+                    :alt="user?.nickname || '用户'"
+                    size="xs"
+                    icon="heroicons:user"
+                  />
+                </template>
+              </UButton>
+            </UDropdownMenu>
+          </ClientOnly>
+        </template>
+      </UDashboardSidebar>
+    </ClientOnly>
+
+    <UDashboardPanel>
+      <template #header>
+        <UButton
+          icon="heroicons:bars-3"
+          size="xl"
+          color="neutral"
+          variant="ghost"
+          class="lg:hidden"
+          @click="isSidebarOpen = true"
+        />
+      </template>
+
+      <template #body>
+        <slot />
+      </template>
+    </UDashboardPanel>
+
+    <!-- AI 助手悬浮按钮 (除了 chat 页面) -->
+    <UTooltip v-if="route.path !== '/chat'" text="AI 助手" :ui="{ content: 'z-[100]' }">
+      <UButton
+        icon="heroicons:sparkles"
+        color="primary"
+        size="xl"
+        class="fixed right-6 bottom-6 z-50 rounded-full shadow-lg"
+        @click="router.push('/chat')"
+      />
+    </UTooltip>
+  </UDashboardGroup>
+</template>

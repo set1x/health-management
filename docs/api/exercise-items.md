@@ -32,6 +32,16 @@
   }
   ```
 
+## `GET /exercise-items/export`
+
+导出分页范围内的运动记录为 CSV
+
+- **查询参数**：同 `GET /exercise-items`
+- **成功响应**：
+  - Content-Type: `text/csv`
+  - Content-Disposition: `attachment; filename="exercise-items.csv"`
+  - Body: CSV 格式文本
+
 ## `GET /exercise-items/{exerciseItemID}`
 
 - **成功响应**：返回 `Exer` 对象
@@ -64,3 +74,11 @@
 ## 数据校验
 
 - `durationMinutes` 范围 `1-600`
+
+## AI 助手联动
+
+- `queryExerciseRecords`：复用 `GET /exercise-items` 过滤器
+- `addExerciseRecord`：校验运动类型必须在 15 种白名单内，成功后返回数据库自增 `exerciseItemID`
+- `updateExerciseRecord`：用于语义指令“把今天的跑步改成 30 分钟”
+
+这些函数由 `/chat/stream` 自动调用，并对接与本页一致的业务规则

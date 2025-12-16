@@ -6,10 +6,21 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/** Web MVC configuration Configures interceptors for authentication */
 @Configuration
 @RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
+
+  private static final String[] AUTH_WHITELIST = {
+    "/actuator/health",
+    "/actuator/info",
+    "/api/auth/login",
+    "/api/auth/password/reset",
+    "/api/auth/register",
+    "/auth/login",
+    "/auth/password/reset",
+    "/auth/register",
+    "/error"
+  };
 
   private final LoginCheckInterceptor loginCheckInterceptor;
 
@@ -18,6 +29,6 @@ public class WebConfig implements WebMvcConfigurer {
     registry
         .addInterceptor(loginCheckInterceptor)
         .addPathPatterns("/**")
-        .excludePathPatterns("/actuator/**", "/auth/login", "/auth/register", "/error");
+        .excludePathPatterns(AUTH_WHITELIST);
   }
 }

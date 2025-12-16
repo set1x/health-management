@@ -1,35 +1,15 @@
-export default defineNuxtRouteMiddleware(async (to) => {
+export default defineNuxtRouteMiddleware((to) => {
   // 仅在客户端执行认证检查
   if (import.meta.server) return
 
-  const config = useRuntimeConfig().public
-  if (config.SKIP_AUTH === 'true') return
-
   const token = useCookie('token')
-  const publicRoutes = ['/login', '/register', '/']
+  const userID = useCookie('userID')
+  const isAuthenticated = !!(token.value && userID.value)
 
-  // 如果是公开路由，直接放行
-  if (publicRoutes.includes(to.path)) {
-    return
+  // 已登录访问公开路由 → dashboard，未登录访问受保护路由 → login
+  if (isAuthenticated === ['/', '/login', '/register'].includes(to.path)) {
+    return navigateTo(isAuthenticated ? '/dashboard' : '/login', { replace: true })
   }
 
-  // 如果没有 token，跳转到登录页
-  if (!token.value) {
-    return navigateTo('/login')
-  }
-
-  try {
-    const { isLoggedIn, fetchUserProfile } = useAuth()
-
-    // 如果已登录且有用户信息，直接放行
-    if (isLoggedIn.value) {
-      const hasProfile = await fetchUserProfile()
-      if (!hasProfile) {
-        // token 无效，清除并跳转到登录页
-        return navigateTo('/login')
-      }
-    }
-  } catch {
-    return navigateTo('/login')
-  }
+  // token 有效性验证由 auth.client.ts 插件的路由守卫处理
 })

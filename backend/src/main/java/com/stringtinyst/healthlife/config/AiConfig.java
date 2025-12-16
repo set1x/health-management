@@ -19,8 +19,6 @@ import reactor.netty.resources.ConnectionProvider;
 @Configuration
 public class AiConfig {
 
-  private final ChatMemory chatMemory = new InMemoryChatMemory();
-
   @Bean
   public ChatMemory chatMemory() {
     return new InMemoryChatMemory();
@@ -50,10 +48,36 @@ public class AiConfig {
   }
 
   @Bean
-  public ChatClient chatClient(ChatClient.Builder builder) {
+  public ChatClient chatClient(ChatClient.Builder builder, ChatMemory chatMemory) {
+    String[] functionNames =
+        new String[] {
+          "queryBodyMetrics",
+          "addBodyMetric",
+          "getBodyMetricDetail",
+          "updateBodyMetric",
+          "deleteBodyMetric",
+          "querySleepRecords",
+          "addSleepRecord",
+          "updateSleepRecord",
+          "getSleepRecordDetail",
+          "deleteSleepRecord",
+          "queryDietRecords",
+          "addDietRecord",
+          "updateDietRecord",
+          "getDietRecordDetail",
+          "deleteDietRecord",
+          "queryExerciseRecords",
+          "addExerciseRecord",
+          "updateExerciseRecord",
+          "getExerciseRecordDetail",
+          "deleteExerciseRecord",
+          "webSearch"
+        };
+
     return builder
-        .defaultSystem(AiPromptTemplate.SYSTEM_PROMPT)
+        .defaultSystem(AiPromptTemplate.buildSystemPrompt())
         .defaultAdvisors(new MessageChatMemoryAdvisor(chatMemory))
+        .defaultFunctions(functionNames)
         .build();
   }
 }

@@ -16,7 +16,7 @@ public class ExerServiceImpl implements ExerService {
   @Autowired private ExerMapper exerMapper;
 
   @Override
-  public PageBean page(
+  public PageBean<Exer> page(
       Integer page,
       Integer pageSize,
       String userID,
@@ -26,18 +26,12 @@ public class ExerServiceImpl implements ExerService {
     PageHelper.startPage(page, pageSize);
     List<Exer> exerList = exerMapper.list(userID, startDate, endDate, exerciseType);
     Page<Exer> p = (Page<Exer>) exerList;
-    PageBean pageBean = new PageBean(p.getTotal(), p.getResult());
-    return pageBean;
+    return new PageBean<>(p.getTotal(), p.getResult());
   }
 
   @Override
   public void addExer(Exer exer) {
     exerMapper.insertExer(exer);
-  }
-
-  @Override
-  public int searchExerItemID(Exer exer) {
-    return exerMapper.searchExerItemID(exer);
   }
 
   @Override

@@ -9,7 +9,11 @@
 
   ```json
   {
-    "query": "你的问题"
+    "query": "你的问题",
+    "history": [
+      {"role": "user", "content": "之前的问题"},
+      {"role": "assistant", "content": "之前的回答"}
+    ]
   }
   ```
 
@@ -26,7 +30,31 @@
 
   事件之间以空行分隔
 
+- **连接管理**：
+  - 前端使用智能重连机制，网络中断时自动重试
+  - 最多重试 5 次，失败后显示错误提示
+  - 连接状态实时反馈：连接中、已连接、连接失败
+  - 重连时自动携带对话历史，保持上下文连贯
+  - 用户主动取消（AbortController）时不触发重连
+
+- **流转超时**：若 60 秒内后端未能继续发送分片，将自动终止本次响应并推送 `{"content":"AI 服务响应超时，请稍后重试"}`，前端会触发自动重连
+- **AI 不可用**：当模型返回 `503` / `429` 等错误时，会推送友好提示，随后关闭连接，前端触发重连机制
+
 - **请求体缺少或为空 `query`**：立即推送 `data: {"content":"消息不能为空"}`，随后发送 `event: close`
+
+## AI 工具清单
+
+聊天接口会在系统提示中附带当前服务器日期与时间，因此无需额外函数即可获取今日日期。以下 Spring AI Function 会根据上下文自动调用：
+
+| 功能域 | 函数 | 说明 |
+| --- | --- | --- |
+| 身体数据 | `queryBodyMetrics` / `addBodyMetric` / `getBodyMetricDetail` / `updateBodyMetric` / `deleteBodyMetric` | 查询、新增、查看详情、修改或删除身高体重记录，并给出 BMI 计算结果 |
+| 睡眠数据 | `querySleepRecords` / `addSleepRecord` / `updateSleepRecord` / `getSleepRecordDetail` / `deleteSleepRecord` | 覆盖睡眠记录的全量 CRUD，自动校验入睡与起床时间顺序 |
+| 饮食数据 | `queryDietRecords` / `addDietRecord` / `updateDietRecord` / `getDietRecordDetail` / `deleteDietRecord` | 管理饮食记录、餐次标签及卡路里估算 |
+| 运动数据 | `queryExerciseRecords` / `addExerciseRecord` / `updateExerciseRecord` / `getExerciseRecordDetail` / `deleteExerciseRecord` | 仅支持预置的 15 种运动类型，新增或修改时自动计算/验证消耗卡路里 |
+| 联网搜索 | `webSearch` | 通过 DuckDuckGo 获取实时健康资讯，可通过 `web.search.enabled` 开关禁用 |
+
+当用户让 AI “帮我记一条运动记录”或“查下昨天的睡眠”，后台会在保证权限的前提下直接调用对应函数并持久化，生成的执行结果会连同行为说明一起通过 SSE 返回
 
 ## `DELETE /chat/memory`
 

@@ -41,3 +41,10 @@
 .layout-leave-to {
   opacity: 0;
 }
+
+/* 防止拖动 sidebar 时鼠标指针闪烁 */
+body:has([data-dragging='true']),
+body:has([data-dragging='true']) * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}

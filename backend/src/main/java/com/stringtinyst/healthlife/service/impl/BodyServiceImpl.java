@@ -22,19 +22,17 @@ public class BodyServiceImpl implements BodyService {
 
   @Override
   public void addBody(Body body) {
-    //        body.setRecordDate(LocalDate.now());
     bodyMapper.insertBody(body);
   }
 
   @Override
-  public PageBean page(
+  public PageBean<Body> page(
       Integer page, Integer pageSize, String userID, LocalDate begin, LocalDate end) {
     PageHelper.startPage(page, pageSize);
 
     List<Body> bodyList = bodyMapper.list(userID, begin, end);
     Page<Body> p = (Page<Body>) bodyList;
-    PageBean pageBean = new PageBean(p.getTotal(), p.getResult());
-    return pageBean;
+    return new PageBean<>(p.getTotal(), p.getResult());
   }
 
   @Override
@@ -45,11 +43,6 @@ public class BodyServiceImpl implements BodyService {
   @Override
   public void updateBody(Body body) {
     bodyMapper.updateBody(body);
-  }
-
-  @Override
-  public int searchbodyID(Body body) {
-    return bodyMapper.searchbodyID(body);
   }
 
   @Override
