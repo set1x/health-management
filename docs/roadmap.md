@@ -74,10 +74,15 @@
 - [x] 新增供 AI 调用的函数封装 (完成于 11 月 25 日)
 - [x] 建立 H2 测试 Profile 并补齐核心单元/切片测试 (完成于 11 月 27 日)
 - [ ] 扩展饮食/运动/睡眠模块的 Mapper & Service 测试 (截止日期: 12 月 2 日)
-- [ ] 为 Body/Diet/Sleep/Exercise Controller 增加 MockMvc 集成测试 (截止日期: 12 月 4 日)
+- [x] 为 Body/Diet/Sleep/Exercise Controller 增加 MockMvc 集成测试 (完成于 12 月 16 日)
 - [ ] Chat/Ai/WebSearch/Upload 控制器契约测试与超时回退覆盖 (截止日期: 12 月 6 日)
 
 ## 更新日志
+
+### 2025-12-16
+
+- 完善后端控制器测试覆盖（Body, Diet, UserProfile）
+- 新增 Chat 控制器基础测试
 
 ### 2025-12-6
 
@@ -163,4 +168,4 @@
 
 ---
 
-**最后更新于** 2025 年 12 月 6 日
+**最后更新于** 2025 年 12 月 18 日
