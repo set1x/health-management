@@ -91,4 +91,5 @@ health-management/
 - [系统架构蓝图](./docs/architecture.md) - 宏观架构设计与流程
 - [API 文档预览](./docs/api/overview.md) - 接口文档预览
 - [项目路线图](./docs/roadmap.md) - 开发计划与进度
+- [用户使用与可访问性建议](./docs/user-guide.md) - 使用与隐私原则
 - [提交规范](./docs/git-commit-guide.md) - Git 提交格式
