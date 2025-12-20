@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 
+// sleep 测试
 test.describe('睡眠数据页面测试', () => {
   test.beforeEach(async ({ page }) => {
     // Mock 登录接口
@@ -34,61 +35,64 @@ test.describe('睡眠数据页面测试', () => {
     })
 
     // Mock 睡眠记录列表接口
-    await page.route(url => url.href.includes('/api/sleep-items'), async (route) => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            code: 1,
-            message: 'success',
-            data: {
-              rows: [
-                {
-                  sleepItemID: 1,
-                  recordDate: '2025-12-21',
-                  bedTime: '2025-12-20T22:00:00',
-                  wakeTime: '2025-12-21T07:00:00'
-                }
-              ],
-              total: 1
-            }
+    await page.route(
+      (url) => url.href.includes('/api/sleep-items'),
+      async (route) => {
+        if (route.request().method() === 'GET') {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              code: 1,
+              message: 'success',
+              data: {
+                rows: [
+                  {
+                    sleepItemID: 1,
+                    recordDate: '2025-12-21',
+                    bedTime: '2025-12-20T22:00:00',
+                    wakeTime: '2025-12-21T07:00:00'
+                  }
+                ],
+                total: 1
+              }
+            })
           })
-        })
-      } else if (route.request().method() === 'POST') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            code: 1,
-            message: 'success',
-            data: null
+        } else if (route.request().method() === 'POST') {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              code: 1,
+              message: 'success',
+              data: null
+            })
           })
-        })
-      } else if (route.request().method() === 'PUT') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            code: 1,
-            message: 'success',
-            data: null
+        } else if (route.request().method() === 'PUT') {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              code: 1,
+              message: 'success',
+              data: null
+            })
           })
-        })
-      } else if (route.request().method() === 'DELETE') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            code: 1,
-            message: 'success',
-            data: null
+        } else if (route.request().method() === 'DELETE') {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              code: 1,
+              message: 'success',
+              data: null
+            })
           })
-        })
-      } else {
-        await route.continue()
+        } else {
+          await route.continue()
+        }
       }
-    })
+    )
 
     // 直接设置 Cookie 跳过登录
     await page.context().addCookies([
@@ -122,7 +126,6 @@ test.describe('睡眠数据页面测试', () => {
     await page.getByRole('button', { name: '添加记录' }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
 
-    // 等待动画完成
     await page.waitForTimeout(500)
 
     const spinbuttons = page.getByRole('spinbutton')
@@ -155,14 +158,15 @@ test.describe('睡眠数据页面测试', () => {
     await expect(page.getByText('请同时填写入睡时间和起床时间')).not.toBeVisible()
 
     // 监听 POST 请求
-    const createPromise = page.waitForResponse(response =>
-      response.url().includes('/api/sleep-items') && response.request().method() === 'POST'
-    );
+    const createPromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/sleep-items') && response.request().method() === 'POST'
+    )
 
     await page.getByRole('button', { name: '确认记录' }).click()
 
     // 等待请求完成
-    await createPromise;
+    await createPromise
 
     await expect(page.getByRole('dialog')).not.toBeVisible()
   })
@@ -176,14 +180,15 @@ test.describe('睡眠数据页面测试', () => {
     await expect(page.getByRole('dialog')).toBeVisible()
 
     // 监听 PUT 请求
-    const updatePromise = page.waitForResponse(response =>
-      response.url().includes('/api/sleep-items') && response.request().method() === 'PUT'
-    );
+    const updatePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/sleep-items') && response.request().method() === 'PUT'
+    )
 
     await page.getByRole('button', { name: '确认更新' }).click()
 
     // 等待请求完成
-    await updatePromise;
+    await updatePromise
 
     // 检查是否有错误提示
     await expect(page.getByText('更新失败')).not.toBeVisible()
