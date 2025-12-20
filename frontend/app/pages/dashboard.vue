@@ -5,312 +5,213 @@ definePageMeta({
 })
 
 const toast = useToast()
-
-// 获取用户 ID（从 cookie 中获取，与 useAuth 保持一致）
 const userIDCookie = useCookie<string | null>('userID')
 const tokenCookie = useCookie<string | null>('token')
+
+const authHeaders = computed(() =>
+  tokenCookie.value ? { Authorization: `Bearer ${tokenCookie.value}` } : undefined
+)
 
 // 对话框状态
 const showBodyDataDialog = ref(false)
 const showDietDialog = ref(false)
 const showExerciseDialog = ref(false)
-const showAIChatPalette = ref(false)
 
 // 图表时间段
 const caloriesTimePeriod = ref<string>('7d')
 const weightTimePeriod = ref<string>('7d')
 
-// 数据
 const weightData = ref<{ date: string; weight: number }[]>([])
 const caloriesData = ref<{ date: string; intake: number; burn: number; net: number }[]>([])
 
-// 统计数据
 const statistics = reactive({
   totalCaloriesConsumed: 0,
   totalCaloriesBurned: 0,
-  averageWeight: 0
+  averageWeight: 0,
+  totalSleepHours: 0
 })
 
-// 健康目标数据
-const healthGoals = reactive({
-  targetWeight: null as number | null,
-  dailyCaloriesIntake: null as number | null,
-  dailyCaloriesBurn: null as number | null
+// 使用 useCookie 读取健康目标
+interface HealthGoals {
+  targetWeight: number | null
+  dailyCaloriesIntake: number | null
+  dailyCaloriesBurn: number | null
+  dailySleepHours: number | null
+}
+
+const healthGoalsCookie = useCookie<HealthGoals>('healthGoals', {
+  default: () => ({
+    targetWeight: 70,
+    dailyCaloriesIntake: 2000,
+    dailyCaloriesBurn: 2000,
+    dailySleepHours: 8
+  })
 })
+
+const healthGoals = healthGoalsCookie.value
+
+const isLoadingWeight = ref(false)
 
 const loadWeightData = async () => {
-  if (!import.meta.client) return
+  if (!import.meta.client || !userIDCookie.value || isLoadingWeight.value) return
+
+  isLoadingWeight.value = true
   try {
-    const userID = userIDCookie.value
-
-    if (!userID) {
-      return
-    }
-
-    const days = parseInt(weightTimePeriod.value.replace('d', ''))
-    const endDate = new Date()
-    const startDate = new Date(endDate)
-    startDate.setDate(startDate.getDate() - days + 1)
-
-    const params = {
-      userID,
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0],
-      page: 1,
-      pageSize: days
-    }
+    const days = parseDaysFromPeriod(weightTimePeriod.value)
+    const { startDate, endDate } = getDateRangeByDays(days)
 
     const response = await $fetch<{
       code: number
-      data: {
-        total: number
-        rows: Array<{
-          bodyMetricID: number
-          userID: string
-          recordDate: string
-          weightKG: number
-          heightCM: number
-          bmi?: number
-        }>
-      }
+      data: { rows: Array<{ recordDate: string; weightKG: number }> }
     }>('/api/body-metrics', {
-      params,
-      headers: tokenCookie.value
-        ? {
-            Authorization: `Bearer ${tokenCookie.value}`
-          }
-        : undefined
+      params: { userID: userIDCookie.value, startDate, endDate, page: 1, pageSize: days },
+      headers: authHeaders.value
     })
 
-    if (response.code === 1 && response.data?.rows) {
-      weightData.value = response.data.rows.map((item) => {
-        const weight =
-          typeof item.weightKG === 'number' && !Number.isNaN(item.weightKG) ? item.weightKG : 0
-        return {
-          date: item.recordDate,
-          weight
-        }
-      })
-    } else {
-      weightData.value = []
-    }
+    weightData.value =
+      response.data?.rows?.map((item) => ({
+        date: item.recordDate,
+        weight: item.weightKG || 0
+      })) || []
   } catch {
     toast.add({ title: '加载体重数据失败', color: 'error' })
     weightData.value = []
+  } finally {
+    isLoadingWeight.value = false
   }
 }
 
+const isLoadingCalories = ref(false)
+
 const loadCaloriesData = async () => {
-  if (!import.meta.client) return
+  if (!import.meta.client || !userIDCookie.value || isLoadingCalories.value) return
+
+  isLoadingCalories.value = true
   try {
-    const userID = userIDCookie.value
-
-    if (!userID) {
-      return
-    }
-
-    const days = parseInt(caloriesTimePeriod.value.replace('d', ''))
-    const endDate = new Date()
-    const startDate = new Date(endDate)
-    startDate.setDate(startDate.getDate() - days + 1)
-
-    const params = {
-      userID,
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0],
-      page: 1,
-      pageSize: 1000
-    }
+    const days = parseDaysFromPeriod(caloriesTimePeriod.value)
+    const { startDate, endDate } = getDateRangeByDays(days)
+    const params = { userID: userIDCookie.value, startDate, endDate, page: 1, pageSize: 1000 }
 
     const [dietResponse, exerciseResponse] = await Promise.all([
       $fetch<{
         code: number
-        data: {
-          total: number
-          rows: Array<{
-            recordDate: string
-            estimatedCalories: number
-          }>
-        }
-      }>('/api/diet-items', {
-        params,
-        headers: tokenCookie.value
-          ? {
-              Authorization: `Bearer ${tokenCookie.value}`
-            }
-          : undefined
-      }),
+        data: { rows: Array<{ recordDate: string; estimatedCalories: number }> }
+      }>('/api/diet-items', { params, headers: authHeaders.value }),
       $fetch<{
         code: number
-        data: {
-          total: number
-          rows: Array<{
-            recordDate: string
-            estimatedCaloriesBurned: number
-          }>
-        }
-      }>('/api/exercise-items', {
-        params,
-        headers: tokenCookie.value
-          ? {
-              Authorization: `Bearer ${tokenCookie.value}`
-            }
-          : undefined
-      })
+        data: { rows: Array<{ recordDate: string; estimatedCaloriesBurned: number }> }
+      }>('/api/exercise-items', { params, headers: authHeaders.value })
     ])
 
     const dateMap = new Map<string, { intake: number; burn: number }>()
 
-    if (dietResponse.code === 1 && dietResponse.data?.rows) {
-      dietResponse.data.rows.forEach((item) => {
-        const date = item.recordDate
-        const existing = dateMap.get(date) || { intake: 0, burn: 0 }
-        existing.intake += item.estimatedCalories || 0
-        dateMap.set(date, existing)
-      })
-    }
+    dietResponse.data?.rows?.forEach((item) => {
+      const existing = dateMap.get(item.recordDate) || { intake: 0, burn: 0 }
+      existing.intake += item.estimatedCalories || 0
+      dateMap.set(item.recordDate, existing)
+    })
 
-    if (exerciseResponse.code === 1 && exerciseResponse.data?.rows) {
-      exerciseResponse.data.rows.forEach((item) => {
-        const date = item.recordDate
-        const existing = dateMap.get(date) || { intake: 0, burn: 0 }
-        existing.burn += item.estimatedCaloriesBurned || 0
-        dateMap.set(date, existing)
-      })
-    }
+    exerciseResponse.data?.rows?.forEach((item) => {
+      const existing = dateMap.get(item.recordDate) || { intake: 0, burn: 0 }
+      existing.burn += item.estimatedCaloriesBurned || 0
+      dateMap.set(item.recordDate, existing)
+    })
 
-    const result: { date: string; intake: number; burn: number; net: number }[] = []
-    for (let i = 0; i < days; i++) {
+    caloriesData.value = Array.from({ length: days }, (_, i) => {
       const date = new Date(startDate)
       date.setDate(date.getDate() + i)
-      const dateStr = date.toISOString().split('T')[0]
-      if (dateStr) {
-        const data = dateMap.get(dateStr) || { intake: 0, burn: 0 }
-        result.push({
-          date: dateStr,
-          intake: data.intake,
-          burn: data.burn,
-          net: data.intake - data.burn
-        })
+      const dateStr = date.toISOString().split('T')[0]!
+      const data = dateMap.get(dateStr) || { intake: 0, burn: 0 }
+      return {
+        date: dateStr,
+        intake: data.intake,
+        burn: data.burn,
+        net: data.intake - data.burn
       }
-    }
-
-    caloriesData.value = result
+    })
   } catch {
     toast.add({ title: '加载卡路里数据失败', color: 'error' })
     caloriesData.value = []
+  } finally {
+    isLoadingCalories.value = false
   }
 }
 
-const loadHealthGoals = () => {
-  if (!import.meta.client) return
-  try {
-    const savedGoals = localStorage.getItem('healthGoals')
-    if (savedGoals) {
-      const parsed = JSON.parse(savedGoals)
-      healthGoals.targetWeight = parsed.targetWeight
-      healthGoals.dailyCaloriesIntake = parsed.dailyCaloriesIntake || parsed.dailyCalories
-      healthGoals.dailyCaloriesBurn = parsed.dailyCaloriesBurn
-    }
-  } catch {
-    // 忽略加载错误
-  }
-}
+const isRefreshing = ref(false)
 
 const refreshData = async () => {
-  if (!import.meta.client) return
+  if (!import.meta.client || !userIDCookie.value || isRefreshing.value) return
 
+  isRefreshing.value = true
   try {
-    const userID = userIDCookie.value
-
-    if (!userID) {
-      return
-    }
-
     const today = new Date().toISOString().split('T')[0]
+    const userID = userIDCookie.value
+    const todayParams = { userID, startDate: today, endDate: today, page: 1, pageSize: 1000 }
 
-    const headers = tokenCookie.value
-      ? {
-          Authorization: `Bearer ${tokenCookie.value}`
-        }
-      : undefined
-
-    const [bodyResponse, dietResponse, exerciseResponse] = await Promise.all([
-      $fetch<{
-        code: number
-        data: {
-          total: number
-          rows: Array<{ weightKG: number }>
-        }
-      }>('/api/body-metrics', {
+    // 分批加载：先加载统计数据
+    const [bodyResponse, dietResponse, exerciseResponse, sleepResponse] = await Promise.all([
+      $fetch<{ code: number; data: { rows: Array<{ weightKG: number }> } }>('/api/body-metrics', {
         params: { userID, page: 1, pageSize: 1 },
-        headers
+        headers: authHeaders.value
       }),
+      $fetch<{ code: number; data: { rows: Array<{ estimatedCalories: number }> } }>(
+        '/api/diet-items',
+        { params: todayParams, headers: authHeaders.value }
+      ),
+      $fetch<{ code: number; data: { rows: Array<{ estimatedCaloriesBurned: number }> } }>(
+        '/api/exercise-items',
+        { params: todayParams, headers: authHeaders.value }
+      ),
       $fetch<{
         code: number
-        data: {
-          total: number
-          rows: Array<{ estimatedCalories: number }>
-        }
-      }>('/api/diet-items', {
-        params: { userID, startDate: today, endDate: today, page: 1, pageSize: 1000 },
-        headers
-      }),
-      $fetch<{
-        code: number
-        data: {
-          total: number
-          rows: Array<{ estimatedCaloriesBurned: number }>
-        }
-      }>('/api/exercise-items', {
-        params: { userID, startDate: today, endDate: today, page: 1, pageSize: 1000 },
-        headers
-      })
+        data: { rows: Array<{ bedTime?: string | null; wakeTime?: string | null }> }
+      }>('/api/sleep-items', { params: todayParams, headers: authHeaders.value })
     ])
 
-    if (bodyResponse.code === 1 && bodyResponse.data?.rows?.length > 0) {
-      const weight = bodyResponse.data.rows[0]?.weightKG
-      statistics.averageWeight = typeof weight === 'number' && !Number.isNaN(weight) ? weight : 0
-    } else {
-      statistics.averageWeight = 0
-    }
+    statistics.averageWeight = bodyResponse.data?.rows?.[0]?.weightKG || 0
+    statistics.totalCaloriesConsumed =
+      dietResponse.data?.rows?.reduce((sum, item) => sum + (item.estimatedCalories || 0), 0) || 0
+    statistics.totalCaloriesBurned =
+      exerciseResponse.data?.rows?.reduce(
+        (sum, item) => sum + (item.estimatedCaloriesBurned || 0),
+        0
+      ) || 0
 
-    if (dietResponse.code === 1 && dietResponse.data?.rows) {
-      statistics.totalCaloriesConsumed = dietResponse.data.rows.reduce((sum, item) => {
-        const calories = item.estimatedCalories || 0
-        return sum + (typeof calories === 'number' && !Number.isNaN(calories) ? calories : 0)
-      }, 0)
-    } else {
-      statistics.totalCaloriesConsumed = 0
-    }
+    const sleepMinutes =
+      sleepResponse.data?.rows?.reduce((sum, item) => {
+        if (!item.bedTime || !item.wakeTime) return sum
+        const diff = new Date(item.wakeTime).getTime() - new Date(item.bedTime).getTime()
+        return sum + (diff > 0 ? diff / 60000 : 0)
+      }, 0) || 0
+    statistics.totalSleepHours = sleepMinutes / 60
 
-    if (exerciseResponse.code === 1 && exerciseResponse.data?.rows) {
-      statistics.totalCaloriesBurned = exerciseResponse.data.rows.reduce((sum, item) => {
-        const burned = item.estimatedCaloriesBurned || 0
-        return sum + (typeof burned === 'number' && !Number.isNaN(burned) ? burned : 0)
-      }, 0)
+    // 统计卡片渲染后，使用 requestIdleCallback 在空闲时加载图表数据
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(
+        () => {
+          Promise.all([loadWeightData(), loadCaloriesData()])
+        },
+        { timeout: 2000 }
+      )
     } else {
-      statistics.totalCaloriesBurned = 0
+      // 降级方案：延迟加载
+      setTimeout(() => {
+        Promise.all([loadWeightData(), loadCaloriesData()])
+      }, 100)
     }
-
-    await Promise.all([loadWeightData(), loadCaloriesData()])
   } catch {
     toast.add({ title: '加载数据失败', color: 'error' })
+  } finally {
+    isRefreshing.value = false
   }
 }
 
 onMounted(async () => {
-  loadHealthGoals()
   await refreshData()
 })
 
-watch(weightTimePeriod, () => {
-  loadWeightData()
-})
-
-watch(caloriesTimePeriod, () => {
-  loadCaloriesData()
-})
+watch(weightTimePeriod, loadWeightData)
+watch(caloriesTimePeriod, loadCaloriesData)
 
 const handleDialogSuccess = () => {
   refreshData()
@@ -319,7 +220,11 @@ const handleDialogSuccess = () => {
 
 <template>
   <UPage>
-    <UPageHeader title="数据概览" description="全面了解您的健康状况，追踪每日进展">
+    <UPageHeader
+      title="数据概览"
+      description="全面了解您的健康状况，追踪每日进展"
+      class="pt-2! sm:pt-3!"
+    >
       <template #icon>
         <UIcon name="mdi:view-dashboard" />
       </template>
@@ -327,7 +232,7 @@ const handleDialogSuccess = () => {
 
     <UPageBody>
       <!-- 统计卡片 -->
-      <div class="mb-6 grid grid-cols-1 gap-6 md:grid-cols-3">
+      <div class="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <UCard>
           <div class="flex items-center gap-4">
             <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg">
@@ -381,9 +286,27 @@ const handleDialogSuccess = () => {
             </div>
           </div>
         </UCard>
+
+        <UCard>
+          <div class="flex items-center gap-4">
+            <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg">
+              <UIcon name="mdi:sleep" class="text-2xl" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="text-2xl font-bold">
+                {{ statistics.totalSleepHours.toFixed(1) }}
+              </div>
+              <div class="mt-1 text-sm">今日睡眠（小时）</div>
+              <div class="mt-1 text-xs">
+                目标: {{ healthGoals.dailySleepHours || '未设置'
+                }}{{ healthGoals.dailySleepHours ? ' 小时' : '' }}
+              </div>
+            </div>
+          </div>
+        </UCard>
       </div>
 
-      <!-- 数据趋势图表 - 使用懒加载 + 延迟水合 -->
+      <!-- 数据趋势图表 -->
       <div class="grid grid-cols-1 gap-6">
         <LazyCaloriesChart
           v-model:time-period="caloriesTimePeriod"
@@ -399,7 +322,7 @@ const handleDialogSuccess = () => {
       </div>
     </UPageBody>
 
-    <!-- 快速记录对话框 - 懒加载，用户交互时才加载 -->
+    <!-- 快速记录对话框 -->
     <LazyQuickBodyDataDialog
       v-if="showBodyDataDialog"
       v-model:open="showBodyDataDialog"
@@ -416,8 +339,5 @@ const handleDialogSuccess = () => {
       v-model:open="showExerciseDialog"
       @success="handleDialogSuccess"
     />
-
-    <!-- AI 聊天面板 -->
-    <AIChatPalette v-model:open="showAIChatPalette" />
   </UPage>
 </template>

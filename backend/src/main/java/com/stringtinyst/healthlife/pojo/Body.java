@@ -10,7 +10,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** Body metrics entity */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

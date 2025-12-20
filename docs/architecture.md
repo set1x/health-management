@@ -10,16 +10,18 @@
 │  - CSR 仪表盘 / 预渲染公开页                              │
 │  - 组合式 API、useState 状态管理                          │
 │  - ECharts 可视化、Nuxt UI 组件                           │
+│  - SSE 连接管理（自动重连、指数退避）                     │
 └───────────────▲───────────────────────┬───────────────────┘
                 │REST / SSE             │
                 │统一响应 / JWT / Cookie│
+                │智能重连 / 状态监控    │
 ┌───────────────┴───────────────────────▼───────────────────┐
 │                    后端服务 (Spring Boot)                 │
 │  - 控制器层暴露 REST/SSE 接口                             │
 │  - 服务层封装业务逻辑                                     │
 │  - MyBatis + PageHelper 数据访问                          │
 │  - LoginCheckInterceptor 进行 JWT 校验                    │
-│  - Spring AI 调用 DashScope                               │
+│  - Spring AI 调用 DeepSeek API                            │
 └───────────────▲───────────────────────┬───────────────────┘
                 │JDBC                   │
                 │InMemory 会话上下文    │
@@ -31,8 +33,8 @@
                 │
                 │HTTPS
 ┌───────────────▼───────────────────────────────────────────┐
-│                  AI 服务 (阿里云通义千问)                 │
-│  - DashScope Chat Model                                   │
+│                    AI 服务 (DeepSeek)                     │
+│  - DeepSeek Chat Model (deepseek-chat)                    │
 │  - SSE 流式响应                                           │
 └───────────────────────────────────────────────────────────┘
 ```
@@ -42,15 +44,18 @@
 - **前端 (frontend/)**：
   - 基于 Nuxt 4 组合式 API 实现的 SPA/SSR 混合应用，负责页面渲染、数据可视化和交互逻辑
   - 借助 `useState`、`useCookie`、`useFetch` 等组合式工具管理认证态和数据请求
+  - 通过 `server/middleware/api-proxy.ts` 复用运行时 `NUXT_PUBLIC_API_BASE`，无论开发或部署环境都统一将 `/api/*` 请求反向代理到后端
 - **后端 (backend/)**：
   - Spring Boot 微服务，遵循 Controller-Service-Mapper 分层
   - 使用 MyBatis + PageHelper 访问 MySQL，统一封装 `Result` 响应结构，拦截器完成 JWT 鉴权
+  - 通过 function 将健康数据 CRUD 与联网搜索封装为 Spring AI Function，供模型安全调用
 - **数据层**：
   - MySQL 存储结构化健康指标数据和用户资料（覆盖身体/饮食/运动/睡眠）
   - 聊天上下文通过 `UserChatSessionManager` 搭配 `InMemoryChatMemory` 保存在内存中
 - **AI 能力**：
-  - 借助 Spring AI Alibaba 模块调用通义千问大模型，支持 SSE 流式对话
-  - `ChatController` 负责对话上下文管理
+  - 借助 Spring AI OpenAI 模块调用 DeepSeek 大模型（DeepSeek-V3.2-Exp），支持 SSE 流式对话
+  - `ChatController` 负责对话上下文管理，并注入 `BodyFunctions`、`SleepFunctions`、`DietFunctions`、`ExerciseFunctions` 与 `WebSearchFunction`
+
 - **基础设施**：
   - 容器化部署使用 Docker 与 docker-compose，后端与 MySQL 通过容器网络关联
 
@@ -58,10 +63,11 @@
 
 ### 用户认证
 
-1. 用户在前端提交邮箱与密码到 `/auth/login`
+1. 用户在前端通过 `/api/auth/login` 发起登录请求（Nitro 中间件/反向代理会转发为后端的 `/auth/login`）
 2. 后端验证后签发 JWT，返回标准响应 `Result{code=1, data=token}`
 3. 前端通过 Cookie 与 `useState` 持久化 Token，路由中间件 `auth.ts` 根据 Token 控制访问
 4. 后端拦截器 `LoginCheckInterceptor` 在每个受保护接口执行校验，并对无效 Token 做统一错误响应
+5. 用户可调用白名单接口 `POST /auth/password/reset`，凭昵称 + 邮箱匹配重置密码
 
 ### 健康数据采集流程
 
@@ -72,10 +78,14 @@
 
 ### AI 咨询流程
 
-1. 前端 `AIChatPalette` 调起 SSE 连接 `POST /chat/stream` 并推送用户问题
-2. 后端 `ChatController` 调用 Spring AI，向通义千问发送上下文提示词
-3. 模型推理结果通过 SSE `data: {...}` 流持续回传，前端实时渲染
-4. 用户可调用 `DELETE /chat/memory` 清空上下文重新开始对话
+1. 前端聊天页（`pages/chat.vue`）通过 `composables/useSSEConnection.ts` 提供的连接管理和 `utils/sse.ts` 封装的 SSE 客户端发起 `POST /chat/stream`，并附带当前历史对话与用户问题
+2. 连接管理层使用指数退避算法自动处理网络中断和重连，最多重试 5 次
+3. 连接状态实时显示：已连接（绿色）、连接中（黄色动画）、连接已断开（灰色）、连接失败（红色）
+4. 后端 `ChatController` 调用 Spring AI，向 DeepSeek 发送上下文提示词，并根据模型需要依次触发 `BodyFunctions` / `SleepFunctions` / `DietFunctions` / `ExerciseFunctions` / `WebSearchFunction`
+5. 函数执行结果（例如新增某条运动记录的 ID）会回写到模型上下文，推理结果通过 SSE `data: {...}` 流持续回传
+6. SSE 层自带 60 秒超时保护，遇到请求失败会推送友好降级提示，并触发自动重连
+7. 用户可调用 `DELETE /chat/memory` 清空上下文重新开始对话
+8. 对话历史本地存储最近 100 条消息，重连后自动恢复上下文
 
 ## 数据流交互
 
@@ -87,18 +97,18 @@
 ## 部署拓扑
 
 - **开发环境**：
-  - 前端：`pnpm dev` 启动本地服务，通过 Vite 代理转发 `/api` 请求到后端
+  - 前端：`pnpm dev` 启动后由 Nuxt Nitro `devProxy` 配合 `server/middleware/api-proxy.ts` 统一转发 `/api` 请求到后端
   - 后端：`./gradlew bootRun`，使用本地 MySQL 或 docker-compose
 
 - **生产环境**：
   - 前端构建产物由 Nginx/CDN 托管，反向代理 `/api` 到后端服务
   - 后端运行在容器或虚拟机上，暴露 `8080` 端口，连接托管的 MySQL 实例
-  - AI 服务需要配置 `SPRING_AI_DASHSCOPE_API_KEY`，遵守服务调用限额
+  - AI 服务需要配置 `DEEPSEEK_API_KEY`，遵守服务调用限额
   - 建议开启 HTTPS、WAF、日志采集和链路监控
 
 ## 安全措施
 
-- **鉴权**：JWT + 拦截器，集中校验所有受保护接口的访问令牌
+- **鉴权**：JWT + 拦截器，集中校验所有受保护接口的访问令牌，并通过 `AntPathMatcher` 维护 `/auth/**` 与 `/api/auth/**` 白名单
 - **输入校验**：Controller 层对用户输入进行校验，并在 Service 层执行业务验证
 - **日志监控**：利用 Spring Boot Actuator 提供健康检查，结合集中化日志便于排错
 - **数据保护**：认证信息与敏感字段应在响应中适当脱敏

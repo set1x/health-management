@@ -11,7 +11,6 @@ public class PasswordEncoder {
   private static final String ALGORITHM = "SHA-256";
   private static final int SALT_LENGTH = 16;
 
-  /** 生成随机盐值 */
   private static String generateSalt() {
     SecureRandom random = new SecureRandom();
     byte[] salt = new byte[SALT_LENGTH];

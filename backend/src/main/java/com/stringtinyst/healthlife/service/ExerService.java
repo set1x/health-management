@@ -5,7 +5,7 @@ import com.stringtinyst.healthlife.pojo.PageBean;
 import java.time.LocalDate;
 
 public interface ExerService {
-  PageBean page(
+  PageBean<Exer> page(
       Integer page,
       Integer pageSize,
       String userID,
@@ -14,8 +14,6 @@ public interface ExerService {
       String exerciseType);
 
   void addExer(Exer exer);
-
-  int searchExerItemID(Exer exer);
 
   Exer getByExerItemID(int exerciseItemID);
 

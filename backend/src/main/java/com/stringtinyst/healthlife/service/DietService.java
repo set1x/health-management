@@ -7,7 +7,7 @@ import java.time.LocalDate;
 public interface DietService {
   void addDiet(Diet diet);
 
-  PageBean page(
+  PageBean<Diet> page(
       Integer page,
       Integer pageSize,
       String userID,

@@ -30,6 +30,16 @@
   }
   ```
 
+## `GET /sleep-items/export`
+
+导出分页范围内的睡眠记录为 CSV
+
+- **查询参数**：同 `GET /sleep-items`
+- **成功响应**：
+  - Content-Type: `text/csv`
+  - Content-Disposition: `attachment; filename="sleep-items.csv"`
+  - Body: CSV 格式文本
+
 ## `GET /sleep-items/{sleepItemID}`
 
 - **成功响应**：返回 `Sleep` 对象
@@ -66,3 +76,11 @@
 ## 数据校验
 
 - 同时提供 `bedTime` 与 `wakeTime` 时必须满足 `bedTime <= wakeTime`
+
+## AI 助手联动
+
+- `querySleepRecords`：用于“帮我看看上周的睡眠”
+- `addSleepRecord`：遵循相同的时间字段格式校验
+- `updateSleepRecord`：可根据指令调整已有记录的时间段
+
+当用户通过聊天添加/修改睡眠记录时，这些函数会直接落库并在 SSE 回复中附带记录 ID 与睡眠时长提示
