@@ -110,9 +110,11 @@ export const useAuth = () => {
   }
 
   const fetchUserProfile = async (silent = false) => {
+    console.log('fetchUserProfile called', { token: token.value })
     if (!token.value) return false
 
     try {
+      console.log('Fetching profile...')
       const response = await $fetch<{ code: number; data: User; msg?: string }>(
         '/api/user/profile',
         {
@@ -121,6 +123,7 @@ export const useAuth = () => {
           }
         }
       )
+      console.log('Profile response:', response)
 
       if (response.code !== 1 || !response.data) {
         throw new Error(response.msg || '获取用户信息失败')
@@ -140,6 +143,7 @@ export const useAuth = () => {
 
       return true
     } catch (error: unknown) {
+      console.error('fetchUserProfile error:', error)
       const apiError = error as ApiError
 
       if (apiError.response?.status === 401) {
