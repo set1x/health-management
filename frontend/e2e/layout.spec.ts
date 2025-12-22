@@ -62,7 +62,7 @@ test.describe('全局布局与导航测试', () => {
               rows: [
                 {
                   exerciseItemID: 1,
-                  recordDate: '2025-12-20',
+                  recordDate: new Date().toISOString().split('T')[0],
                   exerciseType: '跑步',
                   durationMinutes: 30,
                   estimatedCaloriesBurned: 200

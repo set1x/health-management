@@ -46,7 +46,7 @@ test.describe('饮食管理页面测试', () => {
               rows: [
                 {
                   dietItemID: 1,
-                  recordDate: '2025-12-20',
+                  recordDate: new Date().toISOString().split('T')[0],
                   mealType: '早餐',
                   foodName: '燕麦片',
                   estimatedCalories: 300

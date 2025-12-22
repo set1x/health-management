@@ -49,9 +49,10 @@ test.describe('睡眠数据页面测试', () => {
                 rows: [
                   {
                     sleepItemID: 1,
-                    recordDate: '2025-12-21',
-                    bedTime: '2025-12-20T22:00:00',
-                    wakeTime: '2025-12-21T07:00:00'
+                    recordDate: new Date().toISOString().split('T')[0],
+                    bedTime:
+                      new Date(Date.now() - 86400000).toISOString().split('T')[0] + 'T22:00:00',
+                    wakeTime: new Date().toISOString().split('T')[0] + 'T07:00:00'
                   }
                 ],
                 total: 1
@@ -126,7 +127,7 @@ test.describe('睡眠数据页面测试', () => {
     await page.getByRole('button', { name: '添加记录' }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
 
-    await page.waitForTimeout(500)
+    await expect(page.getByRole('spinbutton').first()).toBeVisible()
 
     const spinbuttons = page.getByRole('spinbutton')
 
@@ -208,6 +209,19 @@ test.describe('睡眠数据页面测试', () => {
       await dialog.accept()
     })
 
+    // 监听 DELETE 请求
+    const deletePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/sleep-items') && response.request().method() === 'DELETE'
+    )
+
     await deleteButton.click()
+
+    // 等待请求完成
+    const response = await deletePromise
+    expect(response.status()).toBe(200)
+
+    // 检查是否有错误提示
+    await expect(page.getByText('删除失败')).not.toBeVisible()
   })
 })

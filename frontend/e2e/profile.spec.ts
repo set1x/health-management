@@ -62,7 +62,7 @@ test.describe('个人资料页面测试', () => {
               rows: [
                 {
                   exerciseItemID: 1,
-                  recordDate: '2025-12-20',
+                  recordDate: new Date().toISOString().split('T')[0],
                   exerciseType: '跑步',
                   durationMinutes: 30,
                   estimatedCaloriesBurned: 200

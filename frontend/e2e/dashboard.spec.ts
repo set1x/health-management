@@ -46,7 +46,7 @@ test.describe('仪表板页面测试', () => {
               rows: [
                 {
                   id: 1,
-                  recordDate: '2025-12-20',
+                  recordDate: new Date().toISOString().split('T')[0],
                   weightKG: 70.0,
                   heightCM: 175,
                   bmi: 22.9

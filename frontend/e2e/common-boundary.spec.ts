@@ -46,7 +46,7 @@ test.describe('通用功能与边界测试', () => {
       await route.fulfill({
         status: 200,
         contentType: 'text/csv',
-        body: 'Date,Weight,Height,BMI\n2025-12-20,70.5,175,23.0',
+        body: `Date,Weight,Height,BMI\n${new Date().toISOString().split('T')[0]},70.5,175,23.0`,
         headers: {
           'Content-Disposition': 'attachment; filename="body-metrics.csv"'
         }
