@@ -189,10 +189,8 @@ const loadTodayData = async () => {
     $fetch<{ data: { rows: SleepRecord[] } }>('/api/sleep-items', { headers, params })
   ])
 
-  if (bodyRes.status === 'fulfilled') {
-    if (bodyRes.value && bodyRes.value.data && bodyRes.value.data.rows) {
-      todayData.weight = bodyRes.value.data.rows[0]?.weightKG || null
-    }
+  if (bodyRes.status === 'fulfilled' && bodyRes.value?.data?.rows) {
+    todayData.weight = bodyRes.value.data.rows[0]?.weightKG || null
   }
   if (dietRes.status === 'fulfilled' && dietRes.value?.data?.rows) {
     todayData.calories = dietRes.value.data.rows.reduce((s, i) => s + (i.estimatedCalories || 0), 0)

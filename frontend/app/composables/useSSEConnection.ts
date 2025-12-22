@@ -1,5 +1,5 @@
 /**
- * SSE 连接管理\
+ * SSE 连接管理
  */
 
 export type ConnectionStatus = 'connected' | 'connecting' | 'disconnected' | 'failed'
