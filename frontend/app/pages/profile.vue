@@ -189,18 +189,19 @@ const loadTodayData = async () => {
     $fetch<{ data: { rows: SleepRecord[] } }>('/api/sleep-items', { headers, params })
   ])
 
-  if (bodyRes.status === 'fulfilled')
+  if (bodyRes.status === 'fulfilled' && bodyRes.value?.data?.rows) {
     todayData.weight = bodyRes.value.data.rows[0]?.weightKG || null
-  if (dietRes.status === 'fulfilled') {
+  }
+  if (dietRes.status === 'fulfilled' && dietRes.value?.data?.rows) {
     todayData.calories = dietRes.value.data.rows.reduce((s, i) => s + (i.estimatedCalories || 0), 0)
   }
-  if (exerciseRes.status === 'fulfilled') {
+  if (exerciseRes.status === 'fulfilled' && exerciseRes.value?.data?.rows) {
     todayData.caloriesBurned = exerciseRes.value.data.rows.reduce(
       (s, i) => s + (i.estimatedCaloriesBurned || 0),
       0
     )
   }
-  if (sleepRes.status === 'fulfilled') {
+  if (sleepRes.status === 'fulfilled' && sleepRes.value?.data?.rows) {
     const minutes = sleepRes.value.data.rows.reduce((sum, item) => {
       if (!item.bedTime || !item.wakeTime) return sum
       const diff = new Date(item.wakeTime).getTime() - new Date(item.bedTime).getTime()

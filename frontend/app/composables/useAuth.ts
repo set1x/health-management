@@ -140,6 +140,7 @@ export const useAuth = () => {
 
       return true
     } catch (error: unknown) {
+      handleError('获取用户信息失败', error)
       const apiError = error as ApiError
 
       if (apiError.response?.status === 401) {
