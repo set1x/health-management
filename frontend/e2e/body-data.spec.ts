@@ -139,7 +139,7 @@ test.describe('身体数据页面测试', () => {
     ])
 
     await page.goto('/body-data')
-    await page.waitForLoadState('networkidle')
+    await page.waitForSelector('text=身体数据管理', { timeout: 10000 })
   })
 
   test('页面加载与统计卡片显示', async ({ page }) => {

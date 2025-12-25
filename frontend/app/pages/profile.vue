@@ -134,7 +134,10 @@ const loadUserData = async () => {
   state.loadError = null
 
   try {
-    await fetchUserProfile()
+    const success = await fetchUserProfile()
+    if (!success) {
+      throw new Error('获取用户信息失败')
+    }
     utils.refreshRegistrationDays()
     await Promise.all([loadHealthStats(), loadTodayData()])
   } catch (error) {
@@ -385,8 +388,8 @@ onMounted(() => {
     <UPageHeader title="个人资料" description="管理您的个人信息" class="pt-2! sm:pt-3!" />
 
     <UPageBody>
-      <!-- 错误状态 -->
-      <div v-if="state.loadError && !state.loading" class="py-12">
+      <!-- 错误状态（无缓存数据时） -->
+      <div v-if="state.loadError && !state.loading && !userInfo" class="py-12">
         <UCard>
           <div class="flex flex-col items-center gap-6 py-8 text-center">
             <div
@@ -448,6 +451,28 @@ onMounted(() => {
 
       <!-- 实际内容 -->
       <div v-else>
+        <!-- 加载错误提示（但有缓存数据） -->
+        <UAlert
+          v-if="state.loadError"
+          color="warning"
+          variant="soft"
+          title="数据加载失败"
+          :description="state.loadError"
+          class="mb-6"
+        >
+          <template #actions>
+            <UButton
+              color="warning"
+              variant="solid"
+              size="sm"
+              icon="heroicons:arrow-path"
+              @click="loadUserData"
+            >
+              重新加载
+            </UButton>
+          </template>
+        </UAlert>
+
         <!-- 基本信息和健康统计 -->
         <div class="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
           <!-- 基本信息卡片 -->

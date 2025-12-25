@@ -126,40 +126,62 @@ test.describe('通用功能与边界测试', () => {
     await expect(page.getByText('Internal Server Error').first()).toBeVisible()
   })
 
-  test('表单非法输入验证反馈 (负数)', async ({ page }) => {
+  test('表单非法输入验证反馈（负数）', async ({ page }) => {
     await page.goto('/body-data')
+
+    // 等待页面完全加载
+    await page.waitForLoadState('networkidle')
+
     await page.getByRole('button', { name: '添加记录' }).click()
+    await expect(page.getByRole('dialog')).toBeVisible()
 
-    // 输入非法数据 (例如负数体重)
+    // 清空并输入无效值（负数），绕过 HTML min/max 约束
     const weightInput = page.getByLabel('体重', { exact: true })
-    await weightInput.fill('-50')
+    await weightInput.clear()
+    await weightInput.pressSequentially('-50', { delay: 50 })
 
-    // 触发验证
-    await weightInput.blur()
+    // 点击其他地方触发 blur 事件
+    await page.getByLabel('身高', { exact: true }).click()
+    await page.waitForTimeout(300)
 
     // 尝试提交
     await page.getByRole('button', { name: '确认记录' }).click()
+    await page.waitForTimeout(500)
 
     // 验证错误提示
-    await expect(page.getByText('体重应在 30-300 kg 之间').first()).toBeVisible()
+    await expect(page.getByText('体重应在 30-300 kg 之间')).toBeVisible({ timeout: 5000 })
 
     // 验证对话框仍然可见
     await expect(page.getByRole('dialog')).toBeVisible()
   })
 
-  test('表单非法输入验证反馈 (超大数值)', async ({ page }) => {
+  test('表单非法输入验证反馈（超大数值）', async ({ page }) => {
     await page.goto('/body-data')
+
+    // 等待页面完全加载
+    await page.waitForLoadState('networkidle')
+
     await page.getByRole('button', { name: '添加记录' }).click()
+    await expect(page.getByRole('dialog')).toBeVisible()
 
+    // 清空并输入无效值（超大数值），绕过 HTML min/max 约束
     const weightInput = page.getByLabel('体重', { exact: true })
-    // 输入超过最大值的数值
-    await weightInput.fill('301')
-    await weightInput.blur()
+    await weightInput.clear()
+    await weightInput.pressSequentially('301', { delay: 50 })
 
+    // 点击其他地方触发 blur 事件
+    await page.getByLabel('身高', { exact: true }).click()
+    await page.waitForTimeout(300)
+
+    // 尝试提交
     await page.getByRole('button', { name: '确认记录' }).click()
+    await page.waitForTimeout(500)
 
     // 验证错误提示
-    await expect(page.getByText('体重应在 30-300 kg 之间').first()).toBeVisible()
+    await expect(page.getByText('体重应在 30-300 kg 之间')).toBeVisible({ timeout: 5000 })
+
+    // 验证对话框仍然可见
+    await expect(page.getByRole('dialog')).toBeVisible()
   })
 
   test('会话过期自动跳转 (401 Handling)', async ({ page }) => {
