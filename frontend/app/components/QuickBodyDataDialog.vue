@@ -25,11 +25,11 @@ const calendarValue = shallowRef<DateValue>(getTodayDateValue())
 
 // 表单验证
 const schema = z.object({
-  heightCM: z
+  heightCM: z.coerce
     .number({ message: '请输入身高' })
     .min(100, '身高应在 100-250 cm 之间')
     .max(250, '身高应在 100-250 cm 之间'),
-  weightKG: z
+  weightKG: z.coerce
     .number({ message: '请输入体重' })
     .min(30, '体重应在 30-300 kg 之间')
     .max(300, '体重应在 30-300 kg 之间')
